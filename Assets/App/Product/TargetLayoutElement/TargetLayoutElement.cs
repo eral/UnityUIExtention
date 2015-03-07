@@ -22,7 +22,7 @@ public class TargetLayoutElement : MonoBehaviour, ILayoutElement {
 			SetDirty();
 		}
 	}
-	[SerializeField] private Component _target;
+	[SerializeField] [RestrictInterface(typeof(ILayoutElement))] private Component _target;
 
 	private RectTransform rectTransform {get{return _rectTransform ?? GetComponent<RectTransform>();}}
 	[System.NonSerialized] private RectTransform _rectTransform = null;
