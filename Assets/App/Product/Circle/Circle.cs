@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 
-public class Circle : Graphic, ICanvasRaycastFilter {
+public class Circle : MaskableGraphic, ICanvasRaycastFilter {
 
 	[SerializeField] private Sprite m_Sprite = null;
 	public Sprite sprite {get{return m_Sprite;} set{if (m_Sprite != value) {m_Sprite = value; SetMaterialDirty();}}}
