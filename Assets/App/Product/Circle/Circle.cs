@@ -8,8 +8,8 @@ public class Circle : Graphic, ICanvasRaycastFilter {
 		[SerializeField] private Sprite m_Sprite = null;
 		public Sprite sprite {get{return m_Sprite;} set{if (m_Sprite != value) {m_Sprite = value; SetMaterialDirty();}}}
 
-		[SerializeField] [Range(0, 100)] private int m_Cropping = 10;
-		public int cropping {get{return m_Cropping;} set{if (m_Cropping != value) {m_Cropping = value; SetVerticesDirty();}}}
+		[SerializeField] [Range(3, 120)] private int m_VertexCount = 16;
+		public int vertexCount {get{return m_VertexCount;} set{if (m_VertexCount != value) {m_VertexCount = value; SetVerticesDirty();}}}
 
 		[SerializeField] private bool m_Distortion = false;
 		public bool distortion {get{return m_Distortion;} set{if (m_Distortion!= value) {m_Distortion = value; SetVerticesDirty();}}}
@@ -41,9 +41,6 @@ public class Circle : Graphic, ICanvasRaycastFilter {
 				};
 			}
 
-			var periphery = getPeripheryOfEllipse(Mathf.Max(pos.width, pos.height), Mathf.Min(pos.width, pos.height));
-			var vertexCount = Mathf.RoundToInt(periphery / (cropping + 1));
-			
 			var halfSize = pos.size * 0.5f;
 			var countToRad = Mathf.PI * 2.0f / vertexCount;
 			var vertices = Enumerable.Range(0, vertexCount + 1)
@@ -84,11 +81,4 @@ public class Circle : Graphic, ICanvasRaycastFilter {
 		}
 
 
-		private float getPeripheryOfEllipse(float major, float minor) {
-			var ai = major + minor;
-			var x = ((major - minor) / ai);
-			x = 3.0f * x * x;
-			var result = Mathf.PI * ai * (1 + (x / (10 * Mathf.Sqrt(4 - x))));
-			return result;
-		}
 }

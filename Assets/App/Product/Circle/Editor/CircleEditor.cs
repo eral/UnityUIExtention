@@ -7,8 +7,8 @@ public class CircleEditor : GraphicEditor {
 
 	SerializedProperty m_Sprite;
 	GUIContent m_SpriteContent;
-	SerializedProperty m_Cropping;
-	GUIContent m_CroppingContent;
+	SerializedProperty m_VertexCount;
+	GUIContent m_VertexCountContent;
 	SerializedProperty m_Distortion;
 	GUIContent m_DistortionContent;
 
@@ -16,11 +16,11 @@ public class CircleEditor : GraphicEditor {
 		base.OnEnable();
 
 		m_SpriteContent			= new GUIContent("Source Image");
-		m_CroppingContent	= new GUIContent("Vertex Cropping");
+		m_VertexCountContent	= new GUIContent("Vertex Count");
 		m_DistortionContent		= new GUIContent("Distortion");
 
 		m_Sprite		= serializedObject.FindProperty("m_Sprite");
-		m_Cropping		= serializedObject.FindProperty("m_Cropping");
+		m_VertexCount	= serializedObject.FindProperty("m_VertexCount");
 		m_Distortion	= serializedObject.FindProperty("m_Distortion");
 	}
 
@@ -29,7 +29,7 @@ public class CircleEditor : GraphicEditor {
 
 		EditorGUILayout.PropertyField(m_Sprite, m_SpriteContent);
 		AppearanceControlsGUI();
-		EditorGUILayout.PropertyField(m_Cropping, m_CroppingContent);
+		EditorGUILayout.PropertyField(m_VertexCount, m_VertexCountContent);
 		EditorGUILayout.PropertyField(m_Distortion, m_DistortionContent);
 
 		serializedObject.ApplyModifiedProperties();
