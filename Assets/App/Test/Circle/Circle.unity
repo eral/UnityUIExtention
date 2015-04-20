@@ -294,7 +294,7 @@ RectTransform:
   m_RootOrder: 1
   m_AnchorMin: {x: .5, y: .5}
   m_AnchorMax: {x: .5, y: .5}
-  m_AnchoredPosition: {x: 130, y: 0}
+  m_AnchoredPosition: {x: 128, y: 0}
   m_SizeDelta: {x: 256, y: 256}
   m_Pivot: {x: .5, y: .5}
 --- !u!114 &1248471762
@@ -311,7 +311,7 @@ MonoBehaviour:
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Sprite: {fileID: 21300008, guid: b819802547e0fe146922b54d87aca1c6, type: 3}
-  m_VertexCount: 24
+  m_Cropping: 100
   m_Distortion: 0
 --- !u!222 &1248471763
 CanvasRenderer:
