@@ -3,10 +3,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 
-public class Circle : MaskableGraphic, ICanvasRaycastFilter {
-
-	[SerializeField] private Sprite m_Sprite = null;
-	public Sprite sprite {get{return m_Sprite;} set{if (m_Sprite != value) {m_Sprite = value; SetMaterialDirty();}}}
+public class Circle : Image {
 
 	[SerializeField] [Range(3, 120)] private int m_VertexCount = 16;
 	public int vertexCount {get{return m_VertexCount;} set{if (m_VertexCount != value) {m_VertexCount = value; SetVerticesDirty();}}}
@@ -17,16 +14,12 @@ public class Circle : MaskableGraphic, ICanvasRaycastFilter {
 	protected Circle() {
 	}
 
-	public override Texture mainTexture {get{
-			return ((sprite == null)? s_WhiteTexture: sprite.texture);
-	}}
-
 	protected override void OnFillVBO(List<UIVertex> vbo) {
 		var vert = UIVertex.simpleVert;
 		vert.color = color;
 
 		var pos = GetPixelAdjustedRect();
-		var uvVector4 = ((sprite != null)? UnityEngine.Sprites.DataUtility.GetOuterUV(sprite): Vector4.zero);
+		var uvVector4 = ((overrideSprite != null)? UnityEngine.Sprites.DataUtility.GetOuterUV(overrideSprite): Vector4.zero);
 		var uv = new Rect(uvVector4.x, uvVector4.y, uvVector4.z - uvVector4.x, uvVector4.w - uvVector4.y);
 
 		System.Func<float, float> DistortionFunction;
@@ -72,7 +65,7 @@ public class Circle : MaskableGraphic, ICanvasRaycastFilter {
 		}
 	}
 
-	public virtual bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera) {
+	public override bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera) {
 		Vector2 localPoint;
 		RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform,screenPoint, eventCamera, out localPoint);
 		var pos = GetPixelAdjustedRect();
