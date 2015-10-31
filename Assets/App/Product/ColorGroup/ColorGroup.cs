@@ -24,7 +24,8 @@ public class ColorGroup : Graphic {
 		m_CanvasRenderers = null;
 	}
 
-	protected override void OnFillVBO(List<UIVertex> vbo) {
+	protected override void OnPopulateMesh(VertexHelper toFill) {
+		toFill.Clear();
 	}
 
 	public override bool Raycast(Vector2 sp, Camera eventCamera) {
