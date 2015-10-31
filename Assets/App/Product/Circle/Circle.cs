@@ -14,7 +14,9 @@ public class Circle : Image {
 	protected Circle() {
 	}
 
-	protected override void OnFillVBO(List<UIVertex> vbo) {
+	protected override void OnPopulateMesh(VertexHelper toFill) {
+		toFill.Clear();
+
 		var vert = UIVertex.simpleVert;
 		vert.color = color;
 
@@ -34,6 +36,11 @@ public class Circle : Image {
 			};
 		}
 
+		var centerVertex = vert;
+		centerVertex.position = pos.center;
+		centerVertex.uv0 = uv.center;
+		toFill.AddVert(centerVertex);
+
 		var halfSize = pos.size * 0.5f;
 		var countToRad = Mathf.PI * 2.0f / vertexCount;
 		var vertices = Enumerable.Range(0, vertexCount + 1)
@@ -43,25 +50,12 @@ public class Circle : Image {
 									vert.position = new Vector3(x.Sin * halfSize.x, x.Cos * halfSize.y);
 									vert.uv0 = new Vector2(x.Sin * 0.5f * uv.width * x.Distortion + uv.center.x, x.Cos * 0.5f * uv.height * x.Distortion + uv.center.y);
 									return vert;
-								})
-								.ToArray();
-
-		var centerVertex = vert;
-		centerVertex.position = pos.center;
-		centerVertex.uv0 = uv.center;
-
-		int vertexIndex;
-		for (vertexIndex = 2; vertexIndex <= vertexCount; vertexIndex += 2) {
-			vbo.Add(centerVertex);
-			vbo.Add(vertices[vertexIndex - 2]);
-			vbo.Add(vertices[vertexIndex - 1]);
-			vbo.Add(vertices[vertexIndex - 0]);
+								});
+		foreach (var vertex in vertices) {
+			toFill.AddVert(vertex);
 		}
-		if (vertexIndex-1 <= vertexCount) {
-			vbo.Add(centerVertex);
-			vbo.Add(vertices[vertexIndex - 2]);
-			vbo.Add(vertices[vertexIndex - 1]);
-			vbo.Add(vertices[vertexIndex - 1]);
+		for (var i = 0; i < vertexCount; ++i) {
+			toFill.AddTriangle(0, i + 1, i + 2);
 		}
 	}
 
