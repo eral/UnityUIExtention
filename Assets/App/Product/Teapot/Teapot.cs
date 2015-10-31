@@ -8,7 +8,9 @@ public class Teapot : Image {
 	protected Teapot() {
 	}
 
-	protected override void OnFillVBO(List<UIVertex> vbo) {
+	protected override void OnPopulateMesh(VertexHelper toFill) {
+		toFill.Clear();
+
 		var vert = UIVertex.simpleVert;
 		vert.color = color;
 
@@ -22,7 +24,13 @@ public class Teapot : Image {
 			vert.position = Vector3.Scale(c_Positions[positionIndex], halfSize);
 			var uvIndex = c_PositionUvPairs[primitive, 1];
 			vert.uv0 = Vector2.Scale(c_Uvs[uvIndex], uv.size) + uv.min;
-			vbo.Add(vert);
+			toFill.AddVert(vert);
+		}
+		for (int i = 0, i_max = c_Primitives.GetLength(0); i < i_max; ++i) {
+			toFill.AddTriangle(c_Primitives[i, 0], c_Primitives[i, 1], c_Primitives[i, 2]);
+			if (c_Primitives[i, 2] != c_Primitives[i, 3]) {
+				toFill.AddTriangle(c_Primitives[i, 0], c_Primitives[i, 2], c_Primitives[i, 3]);
+			}
 		}
 	}
 
