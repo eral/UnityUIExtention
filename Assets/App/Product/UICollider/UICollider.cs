@@ -9,7 +9,8 @@ public class UICollider : Graphic, ICanvasRaycastFilter {
 		color = new Color(1.0f, 1.0f, 1.0f, 0.0f);
 	}
 
-	protected override void OnFillVBO(List<UIVertex> vbo) {
+	protected override void OnPopulateMesh(VertexHelper toFill) {
+		toFill.Clear();
 	}
 
 	public virtual bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera) {
