@@ -20,7 +20,12 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 			var value = property.vector2Value;
 			EditorGUI.BeginChangeCheck();
 
-			position = EditorGUI.PrefixLabel(position, label);
+			var prefixLabelPosition = position;
+			prefixLabelPosition.width = EditorGUIUtility.labelWidth;
+			EditorGUI.BeginProperty(position, label, property);
+			EditorGUI.LabelField(prefixLabelPosition, label);
+			EditorGUI.EndProperty();
+			position.xMin += prefixLabelPosition.width;
 
 			var minFloatFieldPosition = position;
 			minFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
@@ -29,7 +34,7 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 
 			var minMaxSliderPosition = position;
 			minMaxSliderPosition.width -= EditorGUIUtility.fieldWidth + c_spacing;
-			EditorGUI.MinMaxSlider(minMaxSliderPosition, ref value.x, ref value.y, minMaxSliderAttribute.Min, minMaxSliderAttribute.Max);
+			EditorGUI.MinMaxSlider(minMaxSliderPosition, ref value.x, ref value.y, minMaxSliderAttribute.min, minMaxSliderAttribute.max);
 			position.xMin += minMaxSliderPosition.width + c_spacing;
 
 			var maxFloatFieldPosition = position;
@@ -48,11 +53,11 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 #endif
 
 public class MinMaxSliderAttribute : PropertyAttribute {
-	public float Min {get; set;}
-	public float Max {get; set;}
+	public readonly float min;
+	public readonly float max;
 
 	public MinMaxSliderAttribute(float min, float max) {
-		Min = min;
-		Max = max;
+		this.min = min;
+		this.max = max;
 	}
 }
