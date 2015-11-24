@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 
-public class ModifyVertexColor : BaseMeshEffect {
+public class CornerColors : BaseMeshEffect {
 
 	[SerializeField] private Color m_UpperLeftColor = Color.white;
 	public Color UpperLeftColor {get{return m_UpperLeftColor;} set{m_UpperLeftColor = value;}}

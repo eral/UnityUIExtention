@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(ModifyVertexColor))]
-public class GradationEditor : Editor {
+[CustomEditor(typeof(CornerColors))]
+public class CornerColorsEditor : Editor {
 	SerializedProperty m_UpperLeftColor;
 	SerializedProperty m_UpperRightColor;
 	SerializedProperty m_LowerLeftColor;
