@@ -6,16 +6,16 @@ using System.Linq;
 public class CornerColors : BaseMeshEffect {
 
 	[SerializeField] private Color m_UpperLeftColor = Color.white;
-	public Color UpperLeftColor {get{return m_UpperLeftColor;} set{m_UpperLeftColor = value;}}
+	public Color upperLeftColor {get{return m_UpperLeftColor;} set{m_UpperLeftColor = value;}}
 
 	[SerializeField] private Color m_UpperRightColor = Color.white;
-	public Color UpperRightColor {get{return m_UpperRightColor;} set{m_UpperRightColor = value;}}
+	public Color upperRightColor {get{return m_UpperRightColor;} set{m_UpperRightColor = value;}}
 
 	[SerializeField] private Color m_LowerLeftColor = Color.white;
-	public Color LowerLeftColor {get{return m_LowerLeftColor;} set{m_LowerLeftColor = value;}}
+	public Color lowerLeftColor {get{return m_LowerLeftColor;} set{m_LowerLeftColor = value;}}
 
 	[SerializeField] private Color m_LowerRightColor = Color.white;
-	public Color LowerRightColor {get{return m_LowerRightColor;} set{m_LowerRightColor = value;}}
+	public Color lowerRightColor {get{return m_LowerRightColor;} set{m_LowerRightColor = value;}}
 
 	public RectTransform rectTransform {
 		get {
@@ -47,8 +47,8 @@ public class CornerColors : BaseMeshEffect {
 			vh.PopulateUIVertex(ref vertex, i);
 			var position = Vector3.Scale(vertex.position - localCorners[0], localCorners[1]);
 
-			vertex.color = Color32.Lerp(Color32.Lerp(LowerLeftColor, LowerRightColor, position.x)
-										, Color32.Lerp(UpperLeftColor, UpperRightColor, position.x)
+			vertex.color = Color32.Lerp(Color32.Lerp(lowerLeftColor, lowerRightColor, position.x)
+										, Color32.Lerp(upperLeftColor, upperRightColor, position.x)
 										, position.y
 										);
 			vh.SetUIVertex(vertex, i);
