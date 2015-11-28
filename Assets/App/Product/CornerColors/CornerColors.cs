@@ -42,13 +42,18 @@ public class CornerColors : BaseMeshEffect {
 									, ((0.0f < localCorners[3].y)? 1.0f / localCorners[3].y: 0.0f)
 									, ((0.0f < localCorners[3].z)? 1.0f / localCorners[3].z: 0.0f));
 
+		var lowerLeftColor32 = (Color32)lowerLeftColor;
+		var lowerRightColor32 = (Color32)lowerRightColor;
+		var upperLeftColor32 = (Color32)upperLeftColor;
+		var upperRightColor32 = (Color32)upperRightColor;
+
 		UIVertex vertex = new UIVertex();
 		for (int i = 0, i_max = vh.currentVertCount; i < i_max; ++i) {
 			vh.PopulateUIVertex(ref vertex, i);
 			var position = Vector3.Scale(vertex.position - localCorners[0], localCorners[1]);
 
-			vertex.color = Color32.Lerp(Color32.Lerp(lowerLeftColor, lowerRightColor, position.x)
-										, Color32.Lerp(upperLeftColor, upperRightColor, position.x)
+			vertex.color = Color32.Lerp(Color32.Lerp(lowerLeftColor32, lowerRightColor32, position.x)
+										, Color32.Lerp(upperLeftColor32, upperRightColor32, position.x)
 										, position.y
 										);
 			vh.SetUIVertex(vertex, i);
