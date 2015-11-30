@@ -74,7 +74,6 @@ public class Perspective : BaseMeshEffect {
 
 		var anchoredPosition3D = rectTransform.anchoredPosition3D;
 		var localRotation = rectTransform.localRotation;
-		var inverseLocalRotation = Quaternion.Inverse(localRotation);
 
 		UIVertex vertex = new UIVertex();
 		for (int i = 0, i_max = vh.currentVertCount; i < i_max; ++i) {
