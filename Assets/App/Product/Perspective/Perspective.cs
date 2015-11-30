@@ -39,6 +39,20 @@ public class Perspective : BaseMeshEffect {
 		}
 	}
 
+	[SerializeField]
+	private bool m_PerspectiveCorrectShader = true;
+	public bool perspectiveCorrectShader {
+		get {
+			return m_PerspectiveCorrectShader;
+		}
+		set {
+			m_PerspectiveCorrectShader = value;
+			if (graphic != null) {
+				graphic.SetVerticesDirty();
+			}
+		}
+	}
+
 	[System.NonSerialized]
 	private Quaternion m_lastLocalRotation = Quaternion.identity;
 
@@ -84,6 +98,9 @@ public class Perspective : BaseMeshEffect {
 				scale = distance / (distance + offset.z);
 			}
 			vertex.position = new Vector3(vertex.position.x * scale, vertex.position.y * scale, vertex.position.z);
+			if (perspectiveCorrectShader) {
+				vertex.uv1 = new Vector2(scale, 0.0f);
+			}
 			vh.SetUIVertex(vertex, i);
 		}
 	}
