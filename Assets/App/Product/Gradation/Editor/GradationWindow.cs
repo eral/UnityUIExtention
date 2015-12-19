@@ -1,0 +1,388 @@
+﻿using UnityEngine;
+using UnityEditor;
+using System.Linq;
+
+public class GradationWindow : EditorWindow {
+
+	[SerializeField]
+	private int m_Target = -1;
+	private GradationMaterial target {
+		get {
+			return ((m_Target != -1)? AssetDatabase.LoadAssetAtPath<GradationMaterial>(AssetDatabase.GetAssetPath(m_Target)): null);
+		}
+		set {
+			if (value != null) {
+				m_Target = value.GetInstanceID();
+				m_Material = ScriptableObject.CreateInstance<GradationMaterial>();
+				EditorUtility.CopySerialized(value, m_Material);
+			} else {
+				m_Target = -1;
+				m_Material = null;
+			}
+			m_Focus = null;
+			m_Dirty = false;
+		}
+	}
+
+	[SerializeField]
+	private GradationMaterial m_Material = null;
+	private GradationMaterial material {get{return m_Material;}}
+
+	[SerializeField]
+	private bool m_Dirty = false;
+
+	private int[] m_Focus;
+
+	private Vector2 m_Scroll;
+	private float m_Scale;
+
+	private const float k_NaturalScale = 0.5f;	//x1.0で表示させた時のウインドウに占めるグラデーションマップが占める割合
+	private const float k_ScrollMargin = 0.8f;	//グラデーションマップ外側にスクロール出来る量(ウインドウサイズからの比率指定)
+	private const float k_MakerRadius = 10.0f;	//マーカー半径
+
+	public static GradationWindow Instantiate(GradationMaterial target) {
+		var result = EditorWindow.GetWindow<GradationWindow>();
+		result.target = target;
+		result.Show();
+		return result;
+	}
+
+	private void DisplayApplyDialog() {
+		var assetPath = AssetDatabase.GetAssetPath(m_Target);
+		if (EditorUtility.DisplayDialog("Unapplied import settings", "Unapplied import settings for '" + assetPath + "'", "Apply", "Revert")) {
+			Apply();
+		}
+	}
+
+	private void Apply() {
+		var targetMaterial = this.target;
+
+		Undo.RecordObjects(new Object[]{this, targetMaterial}, "apply gradation material");
+		EditorUtility.CopySerialized(material, targetMaterial);
+		EditorUtility.SetDirty(targetMaterial);
+		m_Dirty = false;
+		EditorUtility.SetDirty(this);
+	}
+
+	private void OnSelectionChange() {
+		if (m_Target != Selection.activeInstanceID) {
+			if ((material != null) && m_Dirty) {
+				DisplayApplyDialog();
+			}
+		}
+		target = Selection.activeObject as GradationMaterial;
+		m_Focus = null;
+		Repaint();
+	}
+
+	protected virtual void OnEnable() {
+		titleContent = new GUIContent("Gradation Editor");
+
+		m_Scale = 1.0f;
+		var roughlyTargetHalfSize = Mathf.Min(position.size.x, position.size.y) * m_Scale * k_NaturalScale * 0.5f * Vector2.one;
+		m_Scroll = position.size * k_ScrollMargin + roughlyTargetHalfSize;
+	}
+
+	protected virtual void OnDisable() {
+		if (m_Dirty) {
+			DisplayApplyDialog();
+		}
+	}
+
+	public void OnGUI() {
+		if (material == null) {
+			emptyMessage();
+			return;
+		}
+
+		Rect r = Toolbar();
+
+		var targetSize = Mathf.Min(r.size.x, r.size.y) * m_Scale * k_NaturalScale * Vector2.one;
+		var scrollViewSize = r.size * k_ScrollMargin - new Vector2(GUI.skin.verticalScrollbar.fixedWidth, GUI.skin.horizontalScrollbar.fixedHeight);
+		var scrollViewRect = new Rect(Vector2.zero, targetSize + scrollViewSize * 2.0f);
+
+		var scrollAndScale = new Vector3(m_Scroll.x, m_Scroll.y, m_Scale);
+		EditorGUI.BeginChangeCheck();
+		scrollAndScale = BeginScrollScaleView(r, scrollAndScale, scrollViewRect);
+		if (EditorGUI.EndChangeCheck()) {
+			m_Scroll = scrollAndScale;
+			m_Scale = scrollAndScale.z;
+		}
+
+		var mapRect = new Rect(scrollViewSize, targetSize);
+		BeginUpdateFocus(mapRect);
+		GradationMap(mapRect);
+
+		EndScrollScaleView();
+
+		r.size = r.size - new Vector2(GUI.skin.verticalScrollbar.fixedWidth, GUI.skin.horizontalScrollbar.fixedHeight);
+		FocusInfo(r);
+
+		EndUpdateFocus(mapRect);
+	}
+
+	private void emptyMessage() {
+		var label = new GUIContent("No gradation material selected");
+		var oldGUIEnabled = GUI.enabled;
+		GUI.enabled = false;
+		GUILayout.Label(label);
+		GUI.enabled = oldGUIEnabled;
+	}
+
+	private Rect Toolbar() {
+		GUILayout.BeginHorizontal(EditorStyles.toolbar);
+		if (GUILayout.Button("Add", EditorStyles.toolbarButton)) {
+			Undo.RecordObject(this, "add gradation key");
+			material.keys.Add(new GradationMaterial.Key(){position = new Vector2(0.5f, 0.5f), color = Color.white});
+			m_Focus = new[]{material.keys.Count - 1};
+			m_Dirty = true;
+			EditorUtility.SetDirty(this);
+		}
+		var oldGUIEnabled = GUI.enabled;
+		GUI.enabled = (m_Focus != null) && (0 < m_Focus.Length);
+		if (GUILayout.Button("Remove", EditorStyles.toolbarButton)) {
+			Undo.RecordObject(this, "remove gradation key");
+			foreach (var i in m_Focus.OrderByDescending(x=>x)) {
+				material.keys.RemoveAt(i);
+			}
+			m_Focus = null;
+			m_Dirty = true;
+			EditorUtility.SetDirty(this);
+		}
+		GUILayout.FlexibleSpace();
+		GUI.enabled = m_Dirty;
+		if (GUILayout.Button("Revert", EditorStyles.toolbarButton)) {
+			Undo.RecordObject(this, "revert gradation material");
+			target = target;
+		}
+		if (GUILayout.Button("Apply", EditorStyles.toolbarButton)) {
+			Apply();
+		}
+		GUI.enabled = oldGUIEnabled;
+		m_Scale = HorizontalPowSliderLayout(m_Scale, 0.125f, 8.0f, 0.25f, GUILayout.MinWidth(60.0f));
+		if (GUILayout.Button(m_Scale.ToString("x0.0"), EditorStyles.toolbarButton)) {
+			m_Scale = 1.0f;
+		}
+		GUILayout.EndHorizontal();
+		var toolbarHeight = EditorStyles.toolbar.fixedHeight - EditorStyles.toolbar.border.bottom;
+		var result = new Rect(new Vector2(0.0f, toolbarHeight)
+							, new Vector2(position.size.x, position.size.y - toolbarHeight)
+							);
+		return result;
+	}
+
+	private static float HorizontalPowSliderLayout(float value, float leftValue, float rightValue, float pow, params GUILayoutOption[] options) {
+		var powValue = Mathf.Pow(value, pow);
+		EditorGUI.BeginChangeCheck();
+		powValue = GUILayout.HorizontalSlider(powValue, Mathf.Pow(leftValue, pow), Mathf.Pow(rightValue, pow), options);
+		if (EditorGUI.EndChangeCheck()) {
+			value = Mathf.Pow(powValue, 1.0f / pow);
+		}
+		return value;
+	}
+	private static Vector3 BeginScrollScaleView(Rect position, Vector3 scrollPositionAndScale, Rect viewRect) {
+		var scrollPosition = (Vector2)scrollPositionAndScale;
+		var scale = scrollPositionAndScale.z;
+
+		var scrollRect = new Rect(position.position, position.size - new Vector2(GUI.skin.verticalScrollbar.fixedWidth, GUI.skin.horizontalScrollbar.fixedHeight));
+		switch (Event.current.type) {
+		case EventType.MouseDrag:
+			var isMove = false;
+			isMove = isMove || (scrollRect.Contains(Event.current.mousePosition) && (Event.current.button == 2));
+			isMove = isMove || (scrollRect.Contains(Event.current.mousePosition) && (Event.current.button == 0) && (Event.current.alt));
+			if (isMove) {
+				scrollPosition -= Event.current.delta;
+				GUI.changed = true;
+				Event.current.Use();
+			}
+			break;
+		case EventType.ScrollWheel:
+			if (scrollRect.Contains(Event.current.mousePosition)) {
+				scale = Mathf.Clamp(scale - Event.current.delta.y / 64.0f, 0.125f, 8.0f);
+				GUI.changed = true;
+				Event.current.Use();
+			}
+			break;
+		}
+		scrollPosition = GUI.BeginScrollView(position, scrollPosition, viewRect);
+
+		scrollPositionAndScale = new Vector3(scrollPosition.x, scrollPosition.y, scale);
+		return scrollPositionAndScale;
+	}
+
+	private static void EndScrollScaleView() {
+		GUI.EndScrollView();
+	}
+
+	private void BeginUpdateFocus(Rect r) {
+		var isUpdate = (Event.current.type == EventType.MouseDown);
+		isUpdate = isUpdate && ((Event.current.button == 0) && (!Event.current.alt));
+		if (!isUpdate) {
+			return;
+		}
+
+		int[] focus = null;
+		for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
+			var key = material.keys[i];
+			var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, key.position.x)
+									, Mathf.Lerp(r.yMin, r.yMax, key.position.y)
+									);
+			if ((Event.current.mousePosition - position).sqrMagnitude < (k_MakerRadius * k_MakerRadius)) {
+				focus = new[]{i};
+				break;
+			}
+		}
+		if (focus != null) {
+			m_Focus = focus;
+		}
+	}
+
+	private void EndUpdateFocus(Rect r) {
+		var isUpdate = (Event.current.type == EventType.MouseDown);
+		isUpdate = isUpdate && ((Event.current.button == 0) && (!Event.current.alt));
+		if (!isUpdate) {
+			return;
+		}
+
+		int[] focus = null;
+		for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
+			var key = material.keys[i];
+			var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, key.position.x)
+									, Mathf.Lerp(r.yMin, r.yMax, key.position.y)
+									);
+			if ((Event.current.mousePosition - position).sqrMagnitude < (k_MakerRadius * k_MakerRadius)) {
+				focus = new[]{i};
+				break;
+			}
+		}
+		if ((m_Focus != null) && (focus == null)) {
+			m_Focus = focus;
+			Event.current.Use();
+		}
+	}
+
+	private void GradationMap(Rect r) {
+		if (Event.current.type == EventType.Repaint) {
+			DrawTarget(r);
+		}
+
+		for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
+			var isFocus = (m_Focus != null) && m_Focus.Any(x=>x == i);
+			EditorGUI.BeginChangeCheck();
+			var key = GradationMaker(r, material.keys[i].position, material.keys[i].color, isFocus, k_MakerRadius);
+			if (EditorGUI.EndChangeCheck()) {
+				Undo.RecordObject(this, "change gradation key");
+				material.keys[i] = new GradationMaterial.Key(){position = key, color = material.keys[i].color};
+				m_Dirty = true;
+				EditorUtility.SetDirty(this);
+			}
+		}
+	}
+
+	private void DrawTarget(Rect r) {
+		var previewSize = new Vector2(Mathf.Min(r.width, 1024.0f), Mathf.Min(r.height, 1024.0f));
+		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(material, previewSize, Color.white, Color.gray);
+		GUI.DrawTexture(r, previewTexture);
+	}
+
+	private static Vector2 GradationMaker(Rect r, Vector2 value, Color color, bool isFocus, float radius) {
+		int controlID = GUIUtility.GetControlID(FocusType.Passive);
+		return GradationMaker(controlID, r, value, color, isFocus, radius);
+	}
+	private static Vector2 GradationMaker(int controlID, Rect r, Vector2 value, Color color, bool isFocus, float radius) {
+		var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, value.x)
+								, Mathf.Lerp(r.yMin, r.yMax, value.y)
+								);
+		switch (Event.current.GetTypeForControl(controlID)) {
+		case EventType.Repaint:
+			var oldHandlesColor = Handles.color;
+			{
+				Handles.color = ((GUIUtility.hotControl == controlID)
+									? Color.yellow
+									: ((isFocus)
+										? Color.blue
+										: Color.black
+									)
+								);
+				Handles.DrawSolidDisc(position, Vector3.back, radius);
+			}
+			Handles.color = new Color(color.r, color.g, color.b);
+			Handles.DrawSolidArc(position, Vector3.back, Vector3.right, 180.0f, radius - 1.0f);
+			if (color.a < 1.0f) {
+				Handles.color = Color.white;
+				Handles.DrawSolidArc(position, Vector3.back, Vector3.left, 90.0f, radius - 1.0f);
+				Handles.color = Color.black;
+				Handles.DrawSolidArc(position, Vector3.back, Vector3.up, 90.0f, radius - 1.0f);
+			}
+			Handles.color = color;
+			Handles.DrawSolidDisc(position, Vector3.back, radius - 1.0f);
+
+			Handles.color = oldHandlesColor;
+			break;
+		case EventType.MouseDown:
+			if ((Event.current.mousePosition - position).sqrMagnitude < (radius * radius)) {
+				if (Event.current.button == 0) {
+					GUIUtility.hotControl = controlID;
+					Event.current.Use();
+				}
+			}
+			break;
+		case EventType.MouseUp:
+			if (GUIUtility.hotControl == controlID) {
+				GUIUtility.hotControl = 0;
+				Event.current.Use();
+			}
+			break;
+		case EventType.MouseDrag:
+			if (GUIUtility.hotControl == controlID) {
+				value = new Vector2(Mathf.InverseLerp(r.xMin, r.xMax, Event.current.mousePosition.x)
+									, Mathf.InverseLerp(r.yMin, r.yMax, Event.current.mousePosition.y)
+									);
+				GUI.changed = true;
+				Event.current.Use();
+			}
+			break;
+		}
+
+		return value;
+	}
+
+	private void FocusInfo(Rect r) {
+		if ((m_Focus == null) || (0 == m_Focus.Length)) {
+			return;
+		}
+
+		var windowSize = new Vector2(200.0f, 60.0f);
+
+		BeginWindows();
+		var windowRect = new Rect(r.xMax - windowSize.x - 10.0f, r.yMax - windowSize.y - 10.0f, windowSize.x, windowSize.y);
+		var windowTitle = new GUIContent("Key(" + m_Focus[0] + ")");
+		windowRect = GUI.Window(0, windowRect, FocusInfoWindow, windowTitle);
+		EndWindows();
+		if (windowRect.Contains(Event.current.mousePosition)) {
+			Event.current.Use();
+		}
+	}
+
+	private void FocusInfoWindow(int id) {
+		var oldLabelWidth = EditorGUIUtility.labelWidth;
+		var oldWideMode = EditorGUIUtility.wideMode;
+		EditorGUIUtility.labelWidth = 60.0f;
+		EditorGUIUtility.wideMode = true;
+
+		var currentIndex = m_Focus[0];
+		var key = material.keys[currentIndex];
+		EditorGUI.BeginChangeCheck();
+		key.position = EditorGUILayout.Vector2Field("position", key.position);
+		key.color = EditorGUILayout.ColorField("color", key.color);
+		if (EditorGUI.EndChangeCheck()) {
+			Undo.RecordObject(this, "change gradation key");
+			material.keys[currentIndex] = key;
+			m_Dirty = true;
+			EditorUtility.SetDirty(this);
+		}
+
+		EditorGUIUtility.labelWidth = oldLabelWidth;
+		EditorGUIUtility.wideMode = oldWideMode;
+	}
+}
