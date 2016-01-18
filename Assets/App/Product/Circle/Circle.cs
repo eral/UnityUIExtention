@@ -43,7 +43,7 @@ public class Circle : Image {
 
 		var halfSize = pos.size * 0.5f;
 		var countToRad = Mathf.PI * 2.0f / vertexCount;
-		var vertices = Enumerable.Range(0, vertexCount + 1)
+		var vertices = Enumerable.Range(0, vertexCount)
 								.Select(x=>x * countToRad)
 								.Select(x=>new{Sin = Mathf.Sin(x), Cos = Mathf.Cos(x), Distortion = DistortionFunction(x)})
 								.Select(x=>{
@@ -54,9 +54,10 @@ public class Circle : Image {
 		foreach (var vertex in vertices) {
 			toFill.AddVert(vertex);
 		}
-		for (var i = 0; i < vertexCount; ++i) {
+		for (int i = 0, iMax = vertexCount - 1; i < iMax; ++i) {
 			toFill.AddTriangle(0, i + 1, i + 2);
 		}
+		toFill.AddTriangle(0, vertexCount, 1);
 	}
 
 	public override bool IsRaycastLocationValid(Vector2 screenPoint, Camera eventCamera) {
