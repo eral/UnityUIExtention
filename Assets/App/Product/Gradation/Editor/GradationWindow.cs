@@ -280,8 +280,8 @@ public class GradationWindow : EditorWindow {
 	}
 
 	private void DrawTarget(Rect r) {
-		var previewSize = new Vector2(Mathf.Min(r.width, 1024.0f), Mathf.Min(r.height, 1024.0f));
-		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(material, previewSize, Color.white, Color.gray);
+		var textureSize = new Vector2(Mathf.Min(r.width, 1024.0f), Mathf.Min(r.height, 1024.0f));
+		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(material, textureSize, r.size, Color.white, Color.gray);
 		GUI.DrawTexture(r, previewTexture);
 	}
 

@@ -69,6 +69,9 @@ public class GradationMaterialEditor : Editor {
 	}
 
 	public static Texture2D CreatePreviewTexture2D(GradationMaterial material, Vector2 size, Color lightColor, Color darkColor) {
+		return CreatePreviewTexture2D(material, size, size, lightColor, darkColor);
+	}
+	public static Texture2D CreatePreviewTexture2D(GradationMaterial material, Vector2 textureSize, Vector2 drawSize, Color lightColor, Color darkColor) {
 		var previewRender = new PreviewRenderUtility();
 		previewRender.m_Camera.orthographic = true;
 		previewRender.m_Camera.orthographicSize = 1.0f;
@@ -76,11 +79,11 @@ public class GradationMaterialEditor : Editor {
 		previewRender.m_Camera.farClipPlane = 2.0f;
 		var previewMaterial = new Material(Shader.Find("Sprites/Default"));
 
-		Rect r = new Rect(Vector2.zero, size);
+		Rect r = new Rect(Vector2.zero, textureSize);
 		previewRender.BeginStaticPreview(r);
 
 		var matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(previewRender.m_Camera.aspect, 1.0f, 1.0f));
-		var mesh = CreateMesh(material, size, lightColor, darkColor);
+		var mesh = CreateMesh(material, drawSize, lightColor, darkColor);
 		previewRender.DrawMesh(mesh, matrix, previewMaterial, 0);
 
 		previewRender.m_Camera.Render();
