@@ -76,6 +76,8 @@ public class GradationWindow : EditorWindow {
 	}
 
 	protected virtual void OnEnable() {
+		Undo.undoRedoPerformed += OnUndoRedo;
+
 		titleContent = new GUIContent("Gradation Editor");
 
 		m_Scale = 1.0f;
@@ -87,6 +89,14 @@ public class GradationWindow : EditorWindow {
 		if (m_Dirty) {
 			DisplayApplyDialog();
 		}
+		Undo.undoRedoPerformed -= OnUndoRedo;
+	}
+
+	private void OnUndoRedo() {
+		if ((m_Focus != null) && m_Focus.Any(x=>material.keys.Count <= x)) {
+			m_Focus = null;
+		}
+		Repaint();
 	}
 
 	public void OnGUI() {
@@ -132,7 +142,7 @@ public class GradationWindow : EditorWindow {
 	private Rect Toolbar() {
 		GUILayout.BeginHorizontal(EditorStyles.toolbar);
 		if (GUILayout.Button("Add", EditorStyles.toolbarButton)) {
-			Undo.RecordObject(this, "add gradation key");
+			Undo.RecordObjects(new Object[]{this, material}, "add gradation key");
 			material.keys.Add(new GradationMaterial.Key(){position = new Vector2(0.5f, 0.5f), color = Color.white});
 			m_Focus = new[]{material.keys.Count - 1};
 			m_Dirty = true;
@@ -141,7 +151,7 @@ public class GradationWindow : EditorWindow {
 		var oldGUIEnabled = GUI.enabled;
 		GUI.enabled = (m_Focus != null) && (0 < m_Focus.Length);
 		if (GUILayout.Button("Remove", EditorStyles.toolbarButton)) {
-			Undo.RecordObject(this, "remove gradation key");
+			Undo.RecordObjects(new Object[]{this, material}, "remove gradation key");
 			foreach (var i in m_Focus.OrderByDescending(x=>x)) {
 				material.keys.RemoveAt(i);
 			}
@@ -271,7 +281,7 @@ public class GradationWindow : EditorWindow {
 			EditorGUI.BeginChangeCheck();
 			var key = GradationMaker(r, material.keys[i].position, material.keys[i].color, isFocus, k_MakerRadius);
 			if (EditorGUI.EndChangeCheck()) {
-				Undo.RecordObject(this, "change gradation key");
+				Undo.RecordObjects(new Object[]{this, material}, "change gradation key");
 				material.keys[i] = new GradationMaterial.Key(){position = key, color = material.keys[i].color};
 				m_Dirty = true;
 				EditorUtility.SetDirty(this);
@@ -376,7 +386,7 @@ public class GradationWindow : EditorWindow {
 		key.position = EditorGUILayout.Vector2Field("position", key.position);
 		key.color = EditorGUILayout.ColorField("color", key.color);
 		if (EditorGUI.EndChangeCheck()) {
-			Undo.RecordObject(this, "change gradation key");
+			Undo.RecordObjects(new Object[]{this, material}, "change gradation key");
 			material.keys[currentIndex] = key;
 			m_Dirty = true;
 			EditorUtility.SetDirty(this);
