@@ -141,7 +141,12 @@ public class GradationWindow : EditorWindow {
 
 	private Rect Toolbar() {
 		GUILayout.BeginHorizontal(EditorStyles.toolbar);
-		if (GUILayout.Button("Add", EditorStyles.toolbarButton)) {
+		var add = GUILayout.Button("Add", EditorStyles.toolbarButton);
+		if ((Event.current.type == EventType.KeyDown) && (Event.current.keyCode == KeyCode.Insert)) {
+			add = true;
+			Event.current.Use();
+		}
+		if (add) {
 			Undo.RecordObjects(new Object[]{this, material}, "add gradation key");
 			material.keys.Add(new GradationMaterial.Key(){position = new Vector2(0.5f, 0.5f), color = Color.white});
 			m_Focus = new[]{material.keys.Count - 1};
@@ -150,7 +155,12 @@ public class GradationWindow : EditorWindow {
 		}
 		var oldGUIEnabled = GUI.enabled;
 		GUI.enabled = (m_Focus != null) && (0 < m_Focus.Length);
-		if (GUILayout.Button("Remove", EditorStyles.toolbarButton)) {
+		var remove = GUILayout.Button("Remove", EditorStyles.toolbarButton);
+		if ((Event.current.type == EventType.KeyDown) && (Event.current.keyCode == KeyCode.Delete)) {
+			remove = true;
+			Event.current.Use();
+		}
+		if (remove) {
 			Undo.RecordObjects(new Object[]{this, material}, "remove gradation key");
 			foreach (var i in m_Focus.OrderByDescending(x=>x)) {
 				material.keys.RemoveAt(i);
