@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 using System.Linq;
 
 public class GradationWindow : EditorWindow {
@@ -33,12 +34,18 @@ public class GradationWindow : EditorWindow {
 
 	private int[] m_Focus;
 
+	private bool m_Snap = false;
+	private bool m_SnapInfo = false;
+	private bool m_SnapCross = false;
+	private int m_SnapDivideGrid = 4;
+
 	private Vector2 m_Scroll;
 	private float m_Scale;
 
 	private const float k_NaturalScale = 0.5f;	//x1.0で表示させた時のウインドウに占めるグラデーションマップが占める割合
 	private const float k_ScrollMargin = 0.8f;	//グラデーションマップ外側にスクロール出来る量(ウインドウサイズからの比率指定)
 	private const float k_MakerRadius = 10.0f;	//マーカー半径
+	private const float k_SnapRange = 6.0f;	//スナップ範囲
 
 	public static GradationWindow Instantiate(GradationMaterial target) {
 		var result = EditorWindow.GetWindow<GradationWindow>();
@@ -126,6 +133,7 @@ public class GradationWindow : EditorWindow {
 		EndScrollScaleView();
 
 		r.size = r.size - new Vector2(GUI.skin.verticalScrollbar.fixedWidth, GUI.skin.horizontalScrollbar.fixedHeight);
+		SnapInfo(r);
 		FocusInfo(r);
 
 		EndUpdateFocus(mapRect);
@@ -141,6 +149,22 @@ public class GradationWindow : EditorWindow {
 
 	private Rect Toolbar() {
 		GUILayout.BeginHorizontal(EditorStyles.toolbar);
+		AddRemoveToolbar();
+		GUILayout.Space(EditorStyles.toolbar.fixedHeight);
+		SnapToolbar();
+		GUILayout.FlexibleSpace();
+		ApplyRevertToolbar();
+		ScaleToolbar();
+		GUILayout.EndHorizontal();
+
+		var toolbarHeight = EditorStyles.toolbar.fixedHeight - EditorStyles.toolbar.border.bottom;
+		var result = new Rect(new Vector2(0.0f, toolbarHeight)
+							, new Vector2(position.size.x, position.size.y - toolbarHeight)
+							);
+		return result;
+	}
+
+	private void AddRemoveToolbar() {
 		var add = GUILayout.Button("Add", EditorStyles.toolbarButton);
 		if ((Event.current.type == EventType.KeyDown) && (Event.current.keyCode == KeyCode.Insert)) {
 			add = true;
@@ -169,7 +193,30 @@ public class GradationWindow : EditorWindow {
 			m_Dirty = true;
 			EditorUtility.SetDirty(this);
 		}
-		GUILayout.FlexibleSpace();
+		GUI.enabled = oldGUIEnabled;
+	}
+
+	private void SnapToolbar() {
+		EditorGUI.BeginChangeCheck();
+		var snapStyle = new GUIStyle(EditorStyles.toolbarButton);
+		snapStyle.padding.right /= 2;
+		m_Snap = GUILayout.Toggle(m_Snap, "Snap", snapStyle);
+		if (EditorGUI.EndChangeCheck()) {
+			m_SnapInfo = m_Snap;
+		}
+		EditorGUI.BeginChangeCheck();
+		var snapInfoStyle = new GUIStyle(EditorStyles.toolbarButton);
+		snapInfoStyle.padding.left /= 2;
+		m_SnapInfo = GUILayout.Toggle(m_SnapInfo, "▾", snapInfoStyle);
+		if (EditorGUI.EndChangeCheck()) {
+			if (m_SnapInfo) {
+				m_Snap = true;
+			}
+		}
+	}
+
+	private void ApplyRevertToolbar() {
+		var oldGUIEnabled = GUI.enabled;
 		GUI.enabled = m_Dirty;
 		if (GUILayout.Button("Revert", EditorStyles.toolbarButton)) {
 			Undo.RecordObject(this, "revert gradation material");
@@ -179,16 +226,13 @@ public class GradationWindow : EditorWindow {
 			Apply();
 		}
 		GUI.enabled = oldGUIEnabled;
+	}
+
+	private void ScaleToolbar() {
 		m_Scale = HorizontalPowSliderLayout(m_Scale, 0.125f, 8.0f, 0.25f, GUILayout.MinWidth(60.0f));
 		if (GUILayout.Button(m_Scale.ToString("x0.0"), EditorStyles.toolbarButton)) {
 			m_Scale = 1.0f;
 		}
-		GUILayout.EndHorizontal();
-		var toolbarHeight = EditorStyles.toolbar.fixedHeight - EditorStyles.toolbar.border.bottom;
-		var result = new Rect(new Vector2(0.0f, toolbarHeight)
-							, new Vector2(position.size.x, position.size.y - toolbarHeight)
-							);
-		return result;
 	}
 
 	private static float HorizontalPowSliderLayout(float value, float leftValue, float rightValue, float pow, params GUILayoutOption[] options) {
@@ -284,12 +328,13 @@ public class GradationWindow : EditorWindow {
 	private void GradationMap(Rect r) {
 		if (Event.current.type == EventType.Repaint) {
 			DrawTarget(r);
+			DrawSnapLines(r);
 		}
 
 		for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
 			var isFocus = (m_Focus != null) && m_Focus.Any(x=>x == i);
 			EditorGUI.BeginChangeCheck();
-			var key = GradationMaker(r, material.keys[i].position, material.keys[i].color, isFocus, k_MakerRadius);
+			var key = GradationMaker(r, material.keys[i].position, material.keys[i].color, isFocus, k_MakerRadius, GetSnapPositions(r, i));
 			if (EditorGUI.EndChangeCheck()) {
 				Undo.RecordObjects(new Object[]{this, material}, "change gradation key");
 				material.keys[i] = new GradationMaterial.Key(){position = key, color = material.keys[i].color};
@@ -299,17 +344,54 @@ public class GradationWindow : EditorWindow {
 		}
 	}
 
+	private void DrawSnapLines(Rect r) {
+		if (!m_Snap) {
+			return;
+		}
+
+		var oldHandlesColor = Handles.color;
+
+		Handles.color = new Color(0.0f, 0.0f, 0.0f, 1.0f / 3.0f);
+		if (1 <= m_SnapDivideGrid) {
+			var inverseSnapDivideGrid = 1.0f / m_SnapDivideGrid;
+			for (int i = 0, iMax = m_SnapDivideGrid; i < iMax; ++i) {
+				var f = i * inverseSnapDivideGrid;
+				var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, f)
+										, Mathf.Lerp(r.yMin, r.yMax, f)
+										);
+				Handles.DrawLine(new Vector3(r.xMin, position.y, 0.0f), new Vector3(r.xMax, position.y, 0.0f));
+				Handles.DrawLine(new Vector3(position.x, r.yMin, 0.0f), new Vector3(position.x, r.yMax, 0.0f));
+			}
+			Handles.DrawLine(new Vector3(r.xMin, r.yMax, 0.0f), new Vector3(r.xMax, r.yMax, 0.0f));
+			Handles.DrawLine(new Vector3(r.xMax, r.yMin, 0.0f), new Vector3(r.xMax, r.yMax, 0.0f));
+		}
+		if (m_SnapCross) {
+			foreach (var xThreshold in material.keys.Select(x=>x.position.x).Distinct()) {
+				var x = Mathf.Lerp(r.xMin, r.xMax, xThreshold);
+				Handles.DrawLine(new Vector3(x, r.yMin, 0.0f), new Vector3(x, r.yMax, 0.0f));
+			}
+			foreach (var yThreshold in material.keys.Select(x=>x.position.y).Distinct()) {
+				var y = Mathf.Lerp(r.yMin, r.yMax, yThreshold);
+				Handles.DrawLine(new Vector3(r.xMin, y, 0.0f), new Vector3(r.xMax, y, 0.0f));
+			}
+		}
+
+		Handles.color = oldHandlesColor;
+	}
+
 	private void DrawTarget(Rect r) {
 		var textureSize = new Vector2(Mathf.Min(r.width, 1024.0f), Mathf.Min(r.height, 1024.0f));
 		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(material, textureSize, r.size, Color.white, Color.gray);
 		GUI.DrawTexture(r, previewTexture);
 	}
 
-	private static Vector2 GradationMaker(Rect r, Vector2 value, Color color, bool isFocus, float radius) {
+	private static Vector2 GradationMaker(Rect r, Vector2 value, Color color, bool isFocus, float radius, IEnumerable<Vector2> snapPositions) {
 		int controlID = GUIUtility.GetControlID(FocusType.Passive);
-		return GradationMaker(controlID, r, value, color, isFocus, radius);
+		return GradationMaker(controlID, r, value, color, isFocus, radius, snapPositions);
 	}
-	private static Vector2 GradationMaker(int controlID, Rect r, Vector2 value, Color color, bool isFocus, float radius) {
+	private static Vector2 GradationMaker(int controlID, Rect r, Vector2 value, Color color, bool isFocus, float radius, IEnumerable<Vector2> snapPositions) {
+		var state = (Vector2)GUIUtility.GetStateObject(typeof(Vector2), controlID);
+
 		var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, value.x)
 								, Mathf.Lerp(r.yMin, r.yMax, value.y)
 								);
@@ -343,6 +425,7 @@ public class GradationWindow : EditorWindow {
 			if ((Event.current.mousePosition - position).sqrMagnitude < (radius * radius)) {
 				if (Event.current.button == 0) {
 					GUIUtility.hotControl = controlID;
+					state = position - Event.current.mousePosition;
 					Event.current.Use();
 				}
 			}
@@ -350,13 +433,27 @@ public class GradationWindow : EditorWindow {
 		case EventType.MouseUp:
 			if (GUIUtility.hotControl == controlID) {
 				GUIUtility.hotControl = 0;
+				state = Vector2.zero;
 				Event.current.Use();
 			}
 			break;
 		case EventType.MouseDrag:
 			if (GUIUtility.hotControl == controlID) {
-				value = new Vector2(Mathf.InverseLerp(r.xMin, r.xMax, Event.current.mousePosition.x)
-									, Mathf.InverseLerp(r.yMin, r.yMax, Event.current.mousePosition.y)
+				var movedPosition = Event.current.mousePosition + state;
+				foreach (var snapPosition in snapPositions) {
+					if (Mathf.Abs(movedPosition.x - snapPosition.x) < k_SnapRange) {
+						movedPosition.x = snapPosition.x;
+						break;
+					}
+				}
+				foreach (var snapPosition in snapPositions) {
+					if (Mathf.Abs(movedPosition.y - snapPosition.y) < k_SnapRange) {
+						movedPosition.y = snapPosition.y;
+						break;
+					}
+				}
+				value = new Vector2(Mathf.InverseLerp(r.xMin, r.xMax, movedPosition.x)
+									, Mathf.InverseLerp(r.yMin, r.yMax, movedPosition.y)
 									);
 				GUI.changed = true;
 				Event.current.Use();
@@ -365,6 +462,93 @@ public class GradationWindow : EditorWindow {
 		}
 
 		return value;
+	}
+
+	private IEnumerable<Vector2> GetSnapPositions(Rect r, params int[] excludeKeyIndices) {
+		if (!m_Snap) {
+			yield break;
+		}
+
+		if (1 <= m_SnapDivideGrid) {
+			var inverseSnapDivideGrid = 1.0f / m_SnapDivideGrid;
+			for (int i = 0, iMax = m_SnapDivideGrid; i < iMax; ++i) {
+				var f = i * inverseSnapDivideGrid;
+				var result = new Vector2(Mathf.Lerp(r.xMin, r.xMax, f)
+										, Mathf.Lerp(r.yMin, r.yMax, f)
+										);
+				yield return result;
+			}
+			yield return new Vector2(r.xMax, r.yMax);
+		}
+		if (m_SnapCross) {
+			var indices = Enumerable.Range(0, material.keys.Count)
+									.Except(excludeKeyIndices)
+									.ToArray();
+			var xThresholds = indices.Select(x=>material.keys[x])
+									.Select(x=>x.position.x)
+									.Distinct()
+									.Select(x=>Mathf.Lerp(r.xMin, r.xMax, x))
+									.ToArray();
+			var yThresholds = indices.Select(x=>material.keys[x])
+									.Select(x=>x.position.y)
+									.Distinct()
+									.Select(x=>Mathf.Lerp(r.yMin, r.yMax, x))
+									.ToArray();
+			for (int i = 0, iMax = Mathf.Max(xThresholds.Length, yThresholds.Length); i < iMax; ++i) {
+				var result = Vector2.zero;
+				if (i < xThresholds.Length) {
+					result.x = xThresholds[i];
+				}
+				if (i < yThresholds.Length) {
+					result.y = yThresholds[i];
+				}
+				yield return result;
+			}
+		}
+
+		yield break;
+	}
+
+	private void SnapInfo(Rect r) {
+		if (!m_SnapInfo) {
+			return;
+		}
+
+		var windowSize = new Vector2(200.0f, 60.0f);
+
+		EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(200.0f));
+		var oldGUIEnabled = GUI.enabled;
+		var oldLabelWidth = EditorGUIUtility.labelWidth;
+		var oldWideMode = EditorGUIUtility.wideMode;
+		EditorGUIUtility.labelWidth = 60.0f;
+		EditorGUIUtility.wideMode = true;
+		SnapInfoWindow();
+		EditorGUIUtility.labelWidth = oldLabelWidth;
+		EditorGUIUtility.wideMode = oldWideMode;
+		GUI.enabled = oldGUIEnabled;
+		EditorGUILayout.EndVertical();
+	}
+
+	private void SnapInfoWindow() {
+		var oldGUIEnabled = GUI.enabled;
+
+		EditorGUI.BeginChangeCheck();
+		m_SnapCross = EditorGUILayout.Toggle("Cross", m_SnapCross);
+		var enableGrid = 0 < m_SnapDivideGrid;
+		var divideGrid = Mathf.Abs(m_SnapDivideGrid);
+		enableGrid = EditorGUILayout.Toggle("Grid", enableGrid);
+		GUI.enabled = enableGrid;
+		var editorGUIIndentLevel = EditorGUI.indentLevel++;
+		divideGrid = EditorGUILayout.IntSlider("Divide", divideGrid, 1, 50);
+		EditorGUI.indentLevel = editorGUIIndentLevel;
+		if (EditorGUI.EndChangeCheck()) {
+			if (!enableGrid) {
+				divideGrid *= -1;
+			}
+			m_SnapDivideGrid = divideGrid;
+		}
+
+		GUI.enabled = oldGUIEnabled;
 	}
 
 	private void FocusInfo(Rect r) {
