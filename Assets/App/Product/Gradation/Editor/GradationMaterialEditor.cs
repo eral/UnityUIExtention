@@ -95,36 +95,62 @@ public class GradationMaterialEditor : Editor {
 		var result = new Mesh();
 
 		var grid = material.GetGrid();
-		var vertexCount = grid.xThresholds.Length * grid.yThresholds.Length;
+		var mainVertexCount = grid.xThresholds.Length * grid.yThresholds.Length;
+		var subVertexCount = mainVertexCount - grid.xThresholds.Length - grid.yThresholds.Length + 1;
+		var vertexCount = mainVertexCount + subVertexCount;
 		
 		var vertices = new Vector3[vertexCount];
 		for (int y = 0, yMax = grid.yThresholds.Length; y < yMax; ++y) {
 			for (int x = 0, xMax = grid.xThresholds.Length; x < xMax; ++x) {
-				var index = x + y * grid.xThresholds.Length;
+				var index = x + y * xMax;
 				vertices[index] = new Vector3(grid.xThresholds[x] * 2.0f - 1.0f
 											, 1.0f - grid.yThresholds[y] * 2.0f
 											, 0.0f
 											);
 			}
 		}
-		result.vertices = vertices;
-
-		result.colors = grid.colors;
-
-		var indices = new int[6 * (grid.yThresholds.Length - 1) * (grid.xThresholds.Length - 1)];
 		for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
 			for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
-				var index = x + y * (grid.xThresholds.Length - 1);
+				var index = x + y * xMax + mainVertexCount;
+				vertices[index] = new Vector3((grid.xThresholds[x] + grid.xThresholds[x + 1]) - 1.0f
+											, 1.0f - (grid.yThresholds[y] + grid.yThresholds[y + 1])
+											, 0.0f
+											);
+			}
+		}
+		result.vertices = vertices;
+
+		var colors = new Color[vertexCount];
+		Array.Copy(grid.colors, colors, grid.colors.Length);
+		for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
+			for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
+				var index = x + y * xMax + mainVertexCount;
+				colors[index] = (grid.GetColor(x, y) + grid.GetColor(x + 1, y) + grid.GetColor(x + 1, y + 1) + grid.GetColor(x, y + 1)) * 0.25f;
+			}
+		}
+		result.colors = colors;
+
+		var indices = new int[12 * (grid.yThresholds.Length - 1) * (grid.xThresholds.Length - 1)];
+		for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
+			for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
+				var index = x + y * xMax;
 				var upperLeftIndex = x + y * grid.xThresholds.Length;
 				var upperRightIndex = upperLeftIndex + 1;
 				var lowerLeftIndex = upperLeftIndex + grid.xThresholds.Length;
 				var lowerRightIndex = lowerLeftIndex + 1;
-				indices[index * 6 + 0] = upperLeftIndex;
-				indices[index * 6 + 1] = upperRightIndex;
-				indices[index * 6 + 2] = lowerRightIndex;
-				indices[index * 6 + 3] = lowerRightIndex;
-				indices[index * 6 + 4] = lowerLeftIndex;
-				indices[index * 6 + 5] = upperLeftIndex;
+				var centerIndex = index + mainVertexCount;
+				indices[index * 12 +  0] = centerIndex;
+				indices[index * 12 +  1] = upperLeftIndex;
+				indices[index * 12 +  2] = upperRightIndex;
+				indices[index * 12 +  3] = centerIndex;
+				indices[index * 12 +  4] = upperRightIndex;
+				indices[index * 12 +  5] = lowerRightIndex;
+				indices[index * 12 +  6] = centerIndex;
+				indices[index * 12 +  7] = lowerRightIndex;
+				indices[index * 12 +  8] = lowerLeftIndex;
+				indices[index * 12 +  9] = centerIndex;
+				indices[index * 12 + 10] = lowerLeftIndex;
+				indices[index * 12 + 11] = upperLeftIndex;
 			}
 		}
 		result.SetIndices(indices, MeshTopology.Triangles, 0);
