@@ -42,6 +42,11 @@ public class GradationWindow : EditorWindow {
 	private Vector2 m_Scroll;
 	private float m_Scale;
 
+	private PreviewRenderUtility m_PreviewRender = null;
+	private PreviewRenderUtility previewRender {get{
+		return m_PreviewRender ?? (m_PreviewRender = new PreviewRenderUtility());
+	}}
+
 	private const float k_NaturalScale = 0.5f;	//x1.0で表示させた時のウインドウに占めるグラデーションマップが占める割合
 	private const float k_ScrollMargin = 0.8f;	//グラデーションマップ外側にスクロール出来る量(ウインドウサイズからの比率指定)
 	private const float k_MakerRadius = 10.0f;	//マーカー半径
@@ -381,7 +386,7 @@ public class GradationWindow : EditorWindow {
 
 	private void DrawTarget(Rect r) {
 		var textureSize = new Vector2(Mathf.Min(r.width, 1024.0f), Mathf.Min(r.height, 1024.0f));
-		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(material, textureSize, r.size, Color.white, Color.gray);
+		var previewTexture = GradationMaterialEditor.CreatePreviewTexture2D(previewRender, material, textureSize, r.size, Color.white, Color.gray);
 		GUI.DrawTexture(r, previewTexture);
 	}
 

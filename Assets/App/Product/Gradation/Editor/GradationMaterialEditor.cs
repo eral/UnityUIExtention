@@ -73,6 +73,9 @@ public class GradationMaterialEditor : Editor {
 	}
 	public static Texture2D CreatePreviewTexture2D(GradationMaterial material, Vector2 textureSize, Vector2 drawSize, Color lightColor, Color darkColor) {
 		var previewRender = new PreviewRenderUtility();
+		return CreatePreviewTexture2D(previewRender, material, textureSize, drawSize, lightColor, darkColor);
+	}
+	public static Texture2D CreatePreviewTexture2D(PreviewRenderUtility previewRender, GradationMaterial material, Vector2 textureSize, Vector2 drawSize, Color lightColor, Color darkColor) {
 		previewRender.m_Camera.orthographic = true;
 		previewRender.m_Camera.orthographicSize = 1.0f;
 		previewRender.m_Camera.nearClipPlane = 0.0f;
