@@ -7,18 +7,20 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(TargetLayoutElementRemoteBehaviour))]
-public class TargetLayoutElementRemoteBehaviourEditor : Editor {
+namespace UIExtention {
+	[CustomEditor(typeof(TargetLayoutElementRemoteBehaviour))]
+	public class TargetLayoutElementRemoteBehaviourEditor : Editor {
 
-	public override void OnInspectorGUI() {
-		var targetLayoutElementRemoteBehaviour = (TargetLayoutElementRemoteBehaviour)target;
+		public override void OnInspectorGUI() {
+			var targetLayoutElementRemoteBehaviour = (TargetLayoutElementRemoteBehaviour)target;
 
-		var oldGuiEnabled = GUI.enabled;
-		GUI.enabled = false;
+			var oldGuiEnabled = GUI.enabled;
+			GUI.enabled = false;
 
-		EditorGUIUtility.LookLikeControls();
-		EditorGUILayout.ObjectField("Source", (Object)targetLayoutElementRemoteBehaviour.Source, typeof(TargetLayoutElement), true);
+			EditorGUIUtility.LookLikeControls();
+			EditorGUILayout.ObjectField("Source", (Object)targetLayoutElementRemoteBehaviour.Source, typeof(TargetLayoutElement), true);
 
-		GUI.enabled = oldGuiEnabled;
+			GUI.enabled = oldGuiEnabled;
+		}
 	}
 }

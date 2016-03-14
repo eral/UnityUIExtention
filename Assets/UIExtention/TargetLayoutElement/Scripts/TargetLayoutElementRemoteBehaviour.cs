@@ -7,26 +7,28 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-[ExecuteInEditMode]
-public class TargetLayoutElementRemoteBehaviour : MonoBehaviour, ILayoutController {
-	public TargetLayoutElement Source {get{return _source;} set{_source = value;}}
-	[SerializeField] private TargetLayoutElement _source;
+namespace UIExtention {
+	[ExecuteInEditMode]
+	public class TargetLayoutElementRemoteBehaviour : MonoBehaviour, ILayoutController {
+		public TargetLayoutElement Source {get{return _source;} set{_source = value;}}
+		[SerializeField] private TargetLayoutElement _source;
 
-	public void OnDestroy() {
-		if (Source) {
-			Source.OnDestroyOfRemoteBehaviour();
+		public void OnDestroy() {
+			if (Source) {
+				Source.OnDestroyOfRemoteBehaviour();
+			}
 		}
-	}
 
-	public virtual void SetLayoutHorizontal() {
-		if (Source) {
-			Source.SetLayoutHorizontalOfRemoteBehaviour();
+		public virtual void SetLayoutHorizontal() {
+			if (Source) {
+				Source.SetLayoutHorizontalOfRemoteBehaviour();
+			}
 		}
-	}
 
-	public virtual void SetLayoutVertical() {
-		if (Source) {
-			Source.SetLayoutVerticalOfRemoteBehaviour();
+		public virtual void SetLayoutVertical() {
+			if (Source) {
+				Source.SetLayoutVerticalOfRemoteBehaviour();
+			}
 		}
 	}
 }

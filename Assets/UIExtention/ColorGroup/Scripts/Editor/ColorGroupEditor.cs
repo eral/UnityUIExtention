@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(ColorGroup))]
-public class ColorGroupEditor : Editor {
+namespace UIExtention {
+	[CustomEditor(typeof(ColorGroup))]
+	public class ColorGroupEditor : Editor {
 
-	public override void OnInspectorGUI() {
+		public override void OnInspectorGUI() {
+		}
+
 	}
-
 }
