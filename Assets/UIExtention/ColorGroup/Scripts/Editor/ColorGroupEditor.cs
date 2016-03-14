@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(ColorGroup))]
@@ -7,6 +6,5 @@ namespace UIExtention {
 
 		public override void OnInspectorGUI() {
 		}
-
 	}
 }

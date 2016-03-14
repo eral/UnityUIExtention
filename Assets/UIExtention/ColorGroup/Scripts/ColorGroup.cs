@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace UIExtention {
@@ -32,6 +31,5 @@ namespace UIExtention {
 		public override bool Raycast(Vector2 sp, Camera eventCamera) {
 			return false;
 		}
-
 	}
 }

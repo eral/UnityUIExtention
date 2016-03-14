@@ -51,6 +51,5 @@ namespace UIExtention {
 
 			serializedObject.ApplyModifiedProperties();
 		}
-
 	}
 }

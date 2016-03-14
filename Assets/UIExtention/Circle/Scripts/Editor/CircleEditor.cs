@@ -46,8 +46,6 @@ namespace UIExtention {
 			if (sprite == null) {
 				return;
 			}
-
-			//UnityEditor.UI.SpriteDrawUtility.DrawSprite(sprite, rect, circle.canvasRenderer.GetColor());
 		}
 
 		public override string GetInfoString() {

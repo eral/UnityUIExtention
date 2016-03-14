@@ -1,8 +1,6 @@
-﻿/*
- * (C) 2014 ERAL
- * Distributed under the Boost Software License, Version 1.0.
- * (See copy at http://www.boost.org/LICENSE_1_0.txt)
- */
+﻿// (C) 2014 ERAL
+// Distributed under the Boost Software License, Version 1.0.
+// (See copy at http://www.boost.org/LICENSE_1_0.txt)
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,7 +14,6 @@ namespace UIExtention {
 		public override void OnInspectorGUI() {
 			var targetLayoutElement = (TargetLayoutElement)target;
 
-			EditorGUIUtility.LookLikeControls();
 			EditorGUI.BeginChangeCheck();
 			var value = EditorGUILayout.ObjectField("Target", (Object)targetLayoutElement.Target, typeof(Component), true);
 			if (EditorGUI.EndChangeCheck()) {

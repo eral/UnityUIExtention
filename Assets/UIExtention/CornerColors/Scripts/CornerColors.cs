@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace UIExtention {
 	public class CornerColors : BaseMeshEffect {
@@ -60,6 +59,5 @@ namespace UIExtention {
 				vh.SetUIVertex(vertex, i);
 			}
 		}
-
 	}
 }

@@ -36,8 +36,6 @@ namespace UIExtention {
 			if (sprite == null) {
 				return;
 			}
-
-			//UnityEditor.UI.SpriteDrawUtility.DrawSprite(sprite, rect, Teapot.canvasRenderer.GetColor());
 		}
 
 		public override string GetInfoString() {
