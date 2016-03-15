@@ -1,14 +1,8 @@
-UnityUIExtention
-======================
+# UnityUIExtention
+UnityUI(uGUI)向けの拡張コンポーネント群
 
-UnityUI(uGUI)の独自拡張
+## Components List
+WIP
 
-
-
-TargetLayoutElement
-----------------------
-
-LayoutElementを他のGameObjectから取得する。
-
-
-
+## LICENSE
+Boost Software License, Version 1.0
