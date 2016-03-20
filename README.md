@@ -14,6 +14,10 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 円形(と言うか多角形)イメージ
 <img alt="Circle" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Circle.png" width="426">
 
+### ColorGroup
+ボタンのColorTintトランジションを複数オブジェクトに反映
+<img alt="Circle" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/ColorGroup.gif" width="426">
+
 
 
 ## LICENSE
