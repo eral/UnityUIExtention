@@ -18,6 +18,10 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 ボタンのColorTintトランジションを複数オブジェクトに反映
 <img alt="Circle" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/ColorGroup.gif" width="426">
 
+### CornerColors
+四隅の色を個別に変更
+<img alt="CornerColors" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/CornerColors.png" width="426">
+
 
 
 ## LICENSE
