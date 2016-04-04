@@ -22,6 +22,11 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 四隅の色を個別に変更  
 <img alt="CornerColors" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/CornerColors.png" width="426">
 
+### Gradation
+多色グラデーション  
+<img alt="Gradation" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Gradation.png" width="426">
+<img alt="Gradation_Editor" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Gradation_Editor.png" width="426">
+
 ### Perspective
 (「Screen Space - Overlay」キャンバス等の)正射影空間に配置されているオブジェクトにパースを付加  
 <img alt="Perspective" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Perspective.png" width="426">
