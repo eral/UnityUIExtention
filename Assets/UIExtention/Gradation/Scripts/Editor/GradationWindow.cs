@@ -520,8 +520,6 @@ namespace UIExtention {
 				return;
 			}
 
-			var windowSize = new Vector2(200.0f, 60.0f);
-
 			EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(200.0f));
 			var oldGUIEnabled = GUI.enabled;
 			var oldLabelWidth = EditorGUIUtility.labelWidth;
