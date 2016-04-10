@@ -33,6 +33,12 @@ namespace UIExtention {
 											.ToArray();
 				colors = GetColors();
 			}
+			private Grid() {
+				m_Material = null;
+				m_XThresholds = null;
+				m_YThresholds = null;
+				m_Colors = null;
+			}
 
 			public int GetIndex(int x, int y) {
 				if ((xThresholds.Length < x) || (yThresholds.Length < y)) {
@@ -48,6 +54,13 @@ namespace UIExtention {
 				return GetPosition(x, y);
 			}
 			public Vector2 GetPosition(int x, int y) {
+				var result = new Vector2(xThresholds[x], yThresholds[y]);
+				return result;
+			}
+
+			public Vector2 GetPositionWithClamp(int x, int y) {
+				x = Mathf.Clamp(x, 0, xThresholds.Length - 1);
+				y = Mathf.Clamp(y, 0, yThresholds.Length - 1);
 				var result = new Vector2(xThresholds[x], yThresholds[y]);
 				return result;
 			}
@@ -138,6 +151,21 @@ namespace UIExtention {
 					emptyCount -= InterpolateCross(i, result, validFlags);
 				}
 
+				return result;
+			}
+
+			public static Grid Resize(Grid grid, Rect rect) {
+				var result = new Grid();
+				result.material = grid.material;
+				result.xThresholds = new float[grid.xThresholds.Length];
+				for (int i = 0, iMax = result.xThresholds.Length; i < iMax; ++i) {
+					result.xThresholds[i] = Mathf.Lerp(rect.xMin, rect.xMax, grid.xThresholds[i]); 
+				}
+				result.yThresholds = new float[grid.yThresholds.Length];
+				for (int i = 0, iMax = result.yThresholds.Length; i < iMax; ++i) {
+					result.yThresholds[i] = Mathf.Lerp(rect.yMin, rect.yMax, grid.yThresholds[i]); 
+				}
+				result.colors = grid.colors;
 				return result;
 			}
 

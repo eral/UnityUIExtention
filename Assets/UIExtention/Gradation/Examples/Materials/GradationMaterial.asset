@@ -13,6 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ColorBlend: 0
   m_AlphaBlend: 0
+  m_TextMapping: 0
   m_Keys:
   - position: {x: 0, y: 0}
     color: {r: 1, g: 0, b: 0, a: 1}

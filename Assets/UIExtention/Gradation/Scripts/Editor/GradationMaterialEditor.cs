@@ -12,6 +12,8 @@ namespace UIExtention {
 		private GUIContent m_ColorBlendContent;
 		private SerializedProperty m_AlphaBlend;
 		private GUIContent m_AlphaBlendContent;
+		private SerializedProperty m_TextMapping;
+		private GUIContent m_TextMappingContent;
 		private SerializedProperty m_Keys;
 		private GUIContent m_KeysContent;
 
@@ -22,6 +24,8 @@ namespace UIExtention {
 			m_ColorBlend = serializedObject.FindProperty("m_ColorBlend");
 			m_AlphaBlendContent = new GUIContent("Alpha Blend");
 			m_AlphaBlend = serializedObject.FindProperty("m_AlphaBlend");
+			m_TextMappingContent = new GUIContent("Text Mapping");
+			m_TextMapping = serializedObject.FindProperty("m_TextMapping");
 			m_KeysContent = new GUIContent("Keys");
 			m_Keys = serializedObject.FindProperty("m_Keys");
 		}
@@ -31,6 +35,7 @@ namespace UIExtention {
 
 			EditorGUILayout.PropertyField(m_ColorBlend, m_ColorBlendContent, true);
 			EditorGUILayout.PropertyField(m_AlphaBlend, m_AlphaBlendContent, true);
+			EditorGUILayout.PropertyField(m_TextMapping, m_TextMappingContent, true);
 
 			GUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();

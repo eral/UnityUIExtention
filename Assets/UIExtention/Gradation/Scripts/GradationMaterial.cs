@@ -17,6 +17,12 @@ namespace UIExtention {
 			Lighten,
 		}
 
+		public enum TextMapping {
+			RectTransform,
+			Line,
+			Character,
+		}
+
 		[System.Serializable]
 		public struct Key {
 			public Vector2 position;
@@ -34,6 +40,10 @@ namespace UIExtention {
 		[SerializeField]
 		private Blend m_AlphaBlend = Blend.Multiply;
 		public Blend alphaBlend {get{return m_AlphaBlend;} set{m_AlphaBlend = value;}}
+
+		[SerializeField]
+		private TextMapping m_TextMapping = TextMapping.RectTransform;
+		public TextMapping textMapping {get{return m_TextMapping;} set{m_TextMapping = value;}}
 
 		[SerializeField]
 		private List<Key> m_Keys = new List<Key>{new Key {position = new Vector2(0.0f, 0.0f), color = Color.white}

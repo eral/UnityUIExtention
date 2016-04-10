@@ -25,7 +25,7 @@ namespace UIExtention {
 		}
 		private RectTransform m_rectTransform;
 
-		private enum RectangleIndex {
+		public enum RectangleIndex {
 			UpperLeft,
 			UpperRight,
 			LowerRight,
@@ -60,6 +60,18 @@ namespace UIExtention {
 			rectTransform.GetLocalCorners(localCorners);
 			var grid = material.GetGrid();
 
+			Text text = GetComponent<Text>();
+			BaseTextMapping textMapping;
+			if (text == null) {
+				textMapping = new RectTransformTextMapping();
+			} else switch (material.textMapping) {
+			case GradationMaterial.TextMapping.Line:		textMapping = new LineTextMapping();			break;
+			case GradationMaterial.TextMapping.Character:	textMapping = new CharacterTextMapping();		break;
+			default:										textMapping = new RectTransformTextMapping();	break;
+			}
+			textMapping.Initialize(rectTransform, text, vertices, indices, grid, localCorners);
+
+			textMapping.PrePass(vh);
 			for (int i = 0, iMax = indices.Count - 3; i <= iMax; ) {
 				int[] rectangleIndices = null;
 				if (i <= indices.Count - 6) {
@@ -71,7 +83,7 @@ namespace UIExtention {
 				}
 				if (rectangleIndices != null) {
 					//四角形
-					ModifyRectangle(vh, vertices, rectangleIndices, grid, localCorners);
+					ModifyRectangle(vh, vertices, rectangleIndices, grid, localCorners, textMapping);
 					i += 6;
 				} else {
 					//三角形
@@ -82,6 +94,7 @@ namespace UIExtention {
 					i += 3;
 				}
 			}
+			textMapping.PostPass(vh);
 		}
 
 		private int[] GetRectangleIndices(List<UIVertex> vertices, int[] hexIndices) {
@@ -122,7 +135,7 @@ namespace UIExtention {
 			return result;
 		}
 
-		private void ModifyRectangle(VertexHelper vh, List<UIVertex> vertices, int[] rectangleIndices, GradationMaterial.Grid grid, Vector3[] localCorners) {
+		private void ModifyRectangle(VertexHelper vh, List<UIVertex> vertices, int[] rectangleIndices, GradationMaterial.Grid grid, Vector3[] localCorners, BaseTextMapping textMapping) {
 			var rectangleVertices = rectangleIndices.Select(x=>vertices[x]).ToArray();
 			var rectangleNormalizePositions = new Vector2[rectangleVertices.Length];
 			for (int i = 0, iMax = rectangleVertices.Length; i < iMax; ++i) {
@@ -131,18 +144,20 @@ namespace UIExtention {
 												);
 			}
 
-			var xMin = Array.BinarySearch<float>(grid.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].x);
+			GradationMaterial.Grid gridUnit = textMapping.GetGridUnit(rectangleIndices, rectangleNormalizePositions);
+
+			var xMin = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].x);
 			if (xMin < 0) xMin = ~xMin - 1;
-			var xMax = Array.BinarySearch<float>(grid.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].x);
+			var xMax = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].x);
 			if (xMax < 0) xMax = ~xMax;
-			var yMin = Array.BinarySearch<float>(grid.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].y);
+			var yMin = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].y);
 			if (yMin < 0) yMin = ~yMin - 1;
-			var yMax = Array.BinarySearch<float>(grid.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].y);
+			var yMax = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].y);
 			if (yMax < 0) yMax = ~yMax;
 
 			for (int y = yMin; y < yMax; ++y) {
 				for (int x = xMin; x < xMax; ++x) {
-					ModifyRectangleGrid(vh, rectangleVertices, grid, x, y, rectangleNormalizePositions);
+					ModifyRectangleGrid(vh, rectangleVertices, gridUnit, x, y, rectangleNormalizePositions);
 				}
 			}
 		}
@@ -155,8 +170,8 @@ namespace UIExtention {
 				var yOffest = i >> 1;
 				var xIndex = x + xOffset;
 				var yIndex = y + yOffest;
-				gridPositions[i] = new Vector2(grid.xThresholds[xIndex], grid.yThresholds[yIndex]);
-				gridColors[i] = grid.GetColor(xIndex, yIndex);
+				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
+				gridColors[i] = GetGridColor(grid, xIndex, yIndex);
 			}
 
 			System.Func<Vector2, UIVertex> PickupUIVertex = (position)=>{
@@ -223,8 +238,8 @@ namespace UIExtention {
 				var yOffest = i >> 1;
 				var xIndex = x + xOffset;
 				var yIndex = y + yOffest;
-				gridPositions[i] = new Vector2(grid.xThresholds[xIndex], grid.yThresholds[yIndex]);
-				gridColors[i] = grid.GetColor(xIndex, yIndex);
+				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
+				gridColors[i] = GetGridColor(grid, xIndex, yIndex);
 			}
 
 			System.Func<Vector2, UIVertex> PickupUIVertex = (position)=>{
@@ -281,6 +296,31 @@ namespace UIExtention {
 									, currentVertCount + triangleIndices[i + 2]);
 				}
 			}
+		}
+
+		private static Vector2 GetGridPositon(GradationMaterial.Grid grid, int x, int y) {
+			Vector2 result;
+			if (x < 0) {
+				result.x = float.NegativeInfinity;
+			} else if (grid.xThresholds.Length <= x) {
+				result.x = float.PositiveInfinity;
+			} else {
+				result.x = grid.xThresholds[x];
+			}
+			if (y < 0) {
+				result.y = float.NegativeInfinity;
+			} else if (grid.yThresholds.Length <= y) {
+				result.y = float.PositiveInfinity;
+			} else {
+				result.y = grid.yThresholds[y];
+			}
+			return result;
+		}
+
+		private static Color GetGridColor(GradationMaterial.Grid grid, int x, int y) {
+			x = Mathf.Clamp(x, 0, grid.xThresholds.Length - 1);
+			y = Mathf.Clamp(y, 0, grid.yThresholds.Length - 1);
+			return grid.GetColor(x, y);
 		}
 
 		private static System.Func<float, float, float> CreateBlendFunction(GradationMaterial.Blend blend) {
