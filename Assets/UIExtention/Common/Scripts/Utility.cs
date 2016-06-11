@@ -14,26 +14,7 @@ namespace UIExtention {
 				PlungeVertex(triangles, doubtSides, i, vertices, outerVertices);
 			}
 
-#if UNITY_EDITOR
-			var oldHandlesColor = UnityEditor.Handles.color;
-			foreach (var triangle in triangles) {
-				triangle.DrawLine(new Color(0.0f, 0.75f, 0.0f, 0.75f)
-								, new Color(0.0f, 0.0f, 0.0f, 0.25f));
-			}
-			UnityEditor.Handles.color = oldHandlesColor;
-			for (int i = 0, iMax = outerVertices.Length; i < iMax; ++i) {
-				var vertex = outerVertices[i];
-				UnityEditor.Handles.Label(vertex, (-i-1).ToString());
-			}
-#endif
-
-#if UNITY_EDITOR
-			UnityEditor.Handles.color = new Color(1.0f, 1.0f, 1.0f, 0.9f);
-#endif
 			RemoveOuterTriangle(triangles, doubtSides, vertices, outerVertices);
-#if UNITY_EDITOR
-			UnityEditor.Handles.color = oldHandlesColor;
-#endif
 
 			var result = triangles.SelectMany(x=>x.indices)
 								.ToList();
@@ -77,18 +58,6 @@ namespace UIExtention {
 				center.y *= ((vertices[0].x - vertices[2].x) * (vertices[1].x * vertices[1].x - vertices[0].x * vertices[0].x + vertices[1].y * vertices[1].y - vertices[0].y * vertices[0].y) + (vertices[1].x - vertices[0].x) * (vertices[2].x * vertices[2].x - vertices[0].x * vertices[0].x + vertices[2].y * vertices[2].y - vertices[0].y * vertices[0].y));
 				sqrRadius = (vertices[0] - center).sqrMagnitude;
 			}
-#if UNITY_EDITOR
-			public void DrawLine(Color lineColor, Color discColor) {
-				UnityEditor.Handles.color = lineColor;
-				UnityEditor.Handles.DrawLine(vertices[0], vertices[1]);
-				UnityEditor.Handles.DrawLine(vertices[1], vertices[2]);
-				UnityEditor.Handles.DrawLine(vertices[2], vertices[0]);
-				if (0.0f < discColor.a) {
-					UnityEditor.Handles.color = discColor;
-					UnityEditor.Handles.DrawWireDisc(center, Vector3.back, Mathf.Sqrt(sqrRadius));
-				}
-			}
-#endif
 		}
 
 		private class Side {
@@ -205,9 +174,6 @@ namespace UIExtention {
 													};
 					var flip = !ContainsInConvexHull(newTriangleVertices, removeSide.vertices[1]);
 					if (flip) {
-#if UNITY_EDITOR
-						UnityEditor.Handles.DrawLine(removeSide.vertices[0], removeSide.vertices[1]);
-#endif
 						triangles.Remove(suspectTriangles[0]);
 						triangles.Remove(suspectTriangles[1]);
 						triangles.Add(new Triangle(new[]{otherIndex, moreOtherIndex, removeSide.indices[0]}, vertices, outerVertices));
