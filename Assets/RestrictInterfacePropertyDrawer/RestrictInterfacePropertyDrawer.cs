@@ -18,7 +18,6 @@ public class RestrictInterfacePropertyDrawer : PropertyDrawer {
 			var propertyHeight = base.GetPropertyHeight(property, label);
 			position.height = propertyHeight;
 
-			EditorGUIUtility.LookLikeControls();
 			EditorGUI.BeginChangeCheck();
 			var value = EditorGUI.ObjectField(position, label, property.objectReferenceValue, fieldInfo.FieldType, true);
 			if (EditorGUI.EndChangeCheck()) {
