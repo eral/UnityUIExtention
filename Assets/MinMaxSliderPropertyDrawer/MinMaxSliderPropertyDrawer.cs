@@ -14,8 +14,7 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 		var minMaxSliderAttribute = (MinMaxSliderAttribute)attribute;
 
 		if (SerializedPropertyType.Vector2 == property.propertyType) {
-			const float c_spacing = 5.0f;
-			EditorGUIUtility.LookLikeControls();
+			const float kSpacing = 5.0f;
 
 			var value = property.vector2Value;
 			EditorGUI.BeginChangeCheck();
@@ -30,17 +29,17 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 			var minFloatFieldPosition = position;
 			minFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
 			value.x = EditorGUI.FloatField(minFloatFieldPosition, value.x);
-			position.xMin += minFloatFieldPosition.width + c_spacing;
+			position.xMin += minFloatFieldPosition.width + kSpacing;
 
 			var minMaxSliderPosition = position;
-			minMaxSliderPosition.width -= EditorGUIUtility.fieldWidth + c_spacing;
+			minMaxSliderPosition.width -= EditorGUIUtility.fieldWidth + kSpacing;
 			EditorGUI.MinMaxSlider(minMaxSliderPosition, ref value.x, ref value.y, minMaxSliderAttribute.min, minMaxSliderAttribute.max);
-			position.xMin += minMaxSliderPosition.width + c_spacing;
+			position.xMin += minMaxSliderPosition.width + kSpacing;
 
 			var maxFloatFieldPosition = position;
 			maxFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
 			value.y = EditorGUI.FloatField(maxFloatFieldPosition, value.y);
-			position.xMin += maxFloatFieldPosition.width + c_spacing;
+			position.xMin += maxFloatFieldPosition.width + kSpacing;
 
 			if (EditorGUI.EndChangeCheck()) {
 				property.vector2Value = value;
