@@ -72,52 +72,43 @@ namespace UIExtention {
 		}
 		private static float GetSqrDistance(Vector3 aStart, Vector3 aEnd, Vector3 bStart, Vector3 bEnd) {
 			var nearestProgress = GetProgressOfNearestPoint(aStart, aEnd, bStart, bEnd);
-			var aPosition = Vector3.Lerp(aStart, aEnd, nearestProgress[0]);
-			var bPosition = Vector3.Lerp(bStart, bEnd, nearestProgress[1]);
+			var aPosition = Vector3.Lerp(aStart, aEnd, nearestProgress.a);
+			var bPosition = Vector3.Lerp(bStart, bEnd, nearestProgress.b);
 			var distance = aPosition  - bPosition;
 			return distance.sqrMagnitude;
 		}
 
-		private static UIVertex? GetCrossPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
+		private static UIVertex? GetCrossPointWithoutPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
 			var nearestProgress = GetProgressOfNearestPoint(aStart.position, aEnd.position, bStart.position, bEnd.position);
-			var a = Lerp(aStart, aEnd, nearestProgress[0]);
-			var b = Lerp(bStart, bEnd, nearestProgress[1]);
-
+			if ((nearestProgress.a < float.Epsilon) || ((1.0f - nearestProgress.a) < float.Epsilon) || (nearestProgress.b < float.Epsilon) || ((1.0f - nearestProgress.b) < float.Epsilon)) {
+				return null;
+			}
+			var a = Lerp(aStart, aEnd, nearestProgress.a);
+			var b = Lerp(bStart, bEnd, nearestProgress.b);
 			if (Vector2.SqrMagnitude((Vector2)a.position - (Vector2)b.position) < Vector2.kEpsilon) {
 				return MultiplyVertexColor(a, b);
 			} else {
 				return null;
 			}
 		}
-		private static UIVertex? GetCrossPoint(UIVertex aStart, UIVertex aEnd, Vector2 bStart, Vector2 bEnd) {
-			var nearestProgress = GetProgressOfNearestPoint(aStart.position, aEnd.position, bStart, bEnd);
-			var a = Lerp(aStart, aEnd, nearestProgress[0]);
-			var b = Vector2.Lerp(bStart, bEnd, nearestProgress[1]);
 
-			if (Vector2.SqrMagnitude((Vector2)a.position - b) < Vector2.kEpsilon) {
-				return a;
-			} else {
-				return null;
-			}
-		}
-
-		public static UIVertex[] GetNearestPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
+		public static Array2<UIVertex> GetNearestPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
 			var nearestProgress = GetProgressOfNearestPoint(aStart.position, aEnd.position, bStart.position, bEnd.position);
-			return new[]{Lerp(aStart, aEnd, nearestProgress[0])
-						, Lerp(aStart, aEnd, nearestProgress[1])
-						};
+			return new Array2<UIVertex>(Lerp(aStart, aEnd, nearestProgress.a)
+									, Lerp(aStart, aEnd, nearestProgress.b)
+									);
 		}
-		public static Vector3[] GetNearestPoint(Vector3 aStart, Vector3 aEnd, Vector3 bStart, Vector3 bEnd) {
+		public static Array2<Vector3> GetNearestPoint(Vector3 aStart, Vector3 aEnd, Vector3 bStart, Vector3 bEnd) {
 			var nearestProgress = GetProgressOfNearestPoint(aStart, aEnd, bStart, bEnd);
-			return new[]{Vector3.Lerp(aStart, aEnd, nearestProgress[0])
-						, Vector3.Lerp(aStart, aEnd, nearestProgress[1])
-						};
+			return new Array2<Vector3>(Vector3.Lerp(aStart, aEnd, nearestProgress.a)
+									, Vector3.Lerp(aStart, aEnd, nearestProgress.b)
+									);
 		}
 
-		public static float[] GetProgressOfNearestPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
+		public static Array2<float> GetProgressOfNearestPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
 			return GetProgressOfNearestPoint(aStart.position, aEnd.position, bStart.position, bEnd.position);
 		}
-		public static float[] GetProgressOfNearestPoint(Vector3 aStart, Vector3 aEnd, Vector3 bStart, Vector3 bEnd) {
+		public static Array2<float> GetProgressOfNearestPoint(Vector3 aStart, Vector3 aEnd, Vector3 bStart, Vector3 bEnd) {
 			var aDirection = aEnd - aStart;
 			var bDirection = bEnd - bStart;
 
@@ -167,98 +158,213 @@ namespace UIExtention {
 					bProgress = bProgressNom / bSqrLength;
 				}
 			} while (false);
-			return new[]{aProgress, bProgress};
+			return new Array2<float>(aProgress, bProgress);
 		}
 
-		public static void Intersect(List<UIVertex> vertices, VerticesView mask) {
-			var indexBuffer = new List<int>();
-			var vertexBuffer = new List<UIVertex>();
-			for (var i = vertices.Count - 3; 0 <= i; i -= 3) {
-				if (Vector3.kEpsilon < Vector3.SqrMagnitude(vertices[i].position - vertices[i + 1].position)) {
-					indexBuffer.Clear();
-					vertexBuffer.Clear();
-					var vertexInput = new VerticesView(vertices, i, 3);
-					MaskTriangles(vertexInput, mask, vertexBuffer, indexBuffer);
-					var maskedVerticesCount = indexBuffer.Count;
-					if (maskedVerticesCount == 0) {
-						vertices.RemoveRange(i, 3);
-						continue;
-					}
-					for(int k = 0, kMax = 3; k < kMax; ++k) {
-						vertices[i + k] = vertexBuffer[indexBuffer[k]];
-					}
-					if (3 < maskedVerticesCount) {
-						vertices.InsertRange(i + 3, indexBuffer.Skip(3).Select(x=>vertexBuffer[x]));
+		public struct Array2<T> {
+			public T a;
+			public T b;
+
+			public Array2(T a, T b) {
+				this.a = a;
+				this.b = b;
+			}
+
+			public IEnumerable<T> GetEnumerable() {
+				yield return a;
+				yield return b;
+				yield break;
+			}
+		};
+
+		public struct Array3<T> {
+			public T a;
+			public T b;
+			public T c;
+
+			public Array3(T a, T b, T c) {
+				this.a = a;
+				this.b = b;
+				this.c = c;
+			}
+
+			public IEnumerable<T> GetEnumerable() {
+				yield return a;
+				yield return b;
+				yield return c;
+				yield break;
+			}
+		};
+
+		public static void Intersect(List<UIVertex> vertices, List<UIVertex> mask) {
+			var indices = Enumerable.Range(0, vertices.Count).ToList();
+			Intersect(vertices, indices, mask);
+			var verticesCount = vertices.Count;
+			vertices.AddRange(indices.Select(x=>vertices[x]));
+			vertices.RemoveRange(0, verticesCount);
+		}
+		public static void Intersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask) {
+			var indicesOriginalCount = indices.Count;
+
+			var pertexPack = new IndexedVerticesOffset(vertices, indices);
+			var maskPack = new VerticesOffset(mask);
+			var vertices2d = new Vector2[3];
+			var mask2d = new Vector2[3];
+			for (int m = 0, mMax = maskPack.vertices.Count; m < mMax; m += 3) {
+				for (int k = 0, kMax = 3; k < kMax; ++k) {
+					mask2d[k] = maskPack.vertices[m+k].position;
+				}
+				maskPack.start = m;
+				if (!IsDegeneracy(mask2d)) {
+					for (int i = 0, iMax = indicesOriginalCount; i < iMax; i += 3) {
+						for (int k = 0, kMax = 3; k < kMax; ++k) {
+							vertices2d[k] = pertexPack.vertices[i+k].position;
+						}
+						if (!IsDegeneracy(vertices2d)) {
+							pertexPack.start = i;
+							MaskTriangles(pertexPack, vertices2d, maskPack, mask2d);
+						}
 					}
 				}
 			}
+
+			indices.RemoveRange(0, indicesOriginalCount);
 		}
 
-		private static void MaskTriangles(VerticesView vertices, VerticesView mask, List<UIVertex> vertexBuffer, List<int> indexBuffer) {
-			var maskedCount = 0;
-			for(int i = 0, iMax = mask.Count; i < iMax; i += 3) {
-				var currentMask = mask.GetRange(i, 3);
-				if (AddContainsVertex(vertices, currentMask, vertexBuffer) < 3) {
-					AddContainsMask(vertices, currentMask, vertexBuffer);
-					AddCrossPoint(vertices, currentMask, vertexBuffer);
+		private struct IndexedVerticesOffset {
+			public List<UIVertex> vertices;
+			public List<int> indices;
+			public int start;
+
+			public IndexedVerticesOffset(List<UIVertex> vertices, List<int> indices, int start = 0) {
+				this.vertices = vertices;
+				this.indices = indices;
+				this.start = start;
+			}
+
+			public IEnumerable<UIVertex> GetEnumerable() {
+				for (int i = start, iMax = indices.Count; i < iMax; ++i) {
+					yield return vertices[indices[i]];
 				}
-				var addCount = vertexBuffer.Count - maskedCount;
-				if (3 <= addCount) {
-					var triangulationIndex = TriangulationOfSmallConvexHull(vertexBuffer.Skip(maskedCount).Select(x=>(Vector2)x.position).ToList());
-					indexBuffer.AddRange(triangulationIndex.Select(x=>x + maskedCount));
-				}
-				if (0 < addCount) {
-					maskedCount = vertexBuffer.Count;
-				}
+				yield break;
 			}
 		}
 
-		private static int AddContainsVertex(VerticesView vertices, VerticesView mask, List<UIVertex> vertexBuffer) {
+		private struct VerticesOffset {
+			public List<UIVertex> vertices;
+			public int start;
+
+			public VerticesOffset(List<UIVertex> vertices, int start = 0) {
+				this.vertices = vertices;
+				this.start = start;
+			}
+
+			public IEnumerable<UIVertex> GetEnumerable() {
+				for (int i = start, iMax = vertices.Count; i < iMax; ++i) {
+					yield return vertices[i];
+				}
+				yield break;
+			}
+		}
+		
+		private static void MaskTriangles(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
+			var indicesBaseCount = vertexPack.indices.Count;
+			var addCount = AddContainsVertex(vertexPack, vertices2d, maskPack, mask2d);
+			if (addCount == 3) {
+				return;
+			}
+			addCount += AddContainsMask(vertexPack, vertices2d, maskPack, mask2d);
+			addCount += AddCrossPoint(vertexPack, vertices2d, maskPack, mask2d);
+			if ((3 < addCount) && (addCount <= 6)) {
+				var center = Vector2.zero;
+				foreach (var position in vertices2d) {
+					center.x += position.x;
+					center.y += position.y;
+				}
+				center *= 1.0f / 3.0f;
+
+				vertexPack.indices.Sort(indicesBaseCount, addCount, new CounterClockWiseUIVertex(vertexPack.vertices, center));
+				vertexPack.indices.AddRange(k_SmallConvexHullVertexIndices[addCount - 4].Select(x=>vertexPack.indices[indicesBaseCount + x]));
+			} else if ((addCount == 0) || (addCount == 3)) {
+				return;
+			}
+			vertexPack.indices.RemoveRange(indicesBaseCount, addCount);
+		}
+
+		private static int AddContainsVertex(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
 			var result = 0;
-			var mask2d = mask.Select(x=>(Vector2)x.position).ToArray();
-			foreach (var vertex in vertices) {
-				if (ContainsInConvexHull(mask2d, vertex.position)) {
-					var maskVertex = PickupUIVertexFromTriangle(vertex.position, mask);
-					var v = MultiplyVertexColor(vertex, maskVertex);
-					vertexBuffer.Add(v);
+			for (int i = 0, iMax = 3; i < iMax; ++i) {
+				if (ContainsInConvexHull(mask2d, vertices2d[i])) {
+					vertexPack.indices.Add(vertexPack.vertices.Count);
+					var vertex = vertexPack.vertices[vertexPack.indices[vertexPack.start + i]];
+					var maskVertex = PickupUIVertexFromTriangle(vertex.position, maskPack, mask2d);
+					vertexPack.vertices.Add(MultiplyVertexColor(vertex, maskVertex));
 					++result;
 				}
 			}
 			return result;
 		}
 
-		private static int AddContainsMask(VerticesView vertices, VerticesView mask, List<UIVertex> vertexBuffer) {
+		private static int AddContainsMask(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
 			var result = 0;
-			var vertices2d = vertices.Select(x=>(Vector2)x.position).ToArray();
-			foreach (var maskVertex in mask) {
-				if (ContainsInConvexHull(vertices2d, (Vector2)maskVertex.position)) {
-					var vertex = PickupUIVertexFromTriangle(maskVertex.position, vertices);
-					var v = MultiplyVertexColor(vertex, maskVertex);
-					vertexBuffer.Add(v);
+			for (int i = 0, iMax = 3; i < iMax; ++i) {
+				if (ContainsInConvexHull(vertices2d, mask2d[i])) {
+					vertexPack.indices.Add(vertexPack.vertices.Count);
+					var vertex = PickupUIVertexFromTriangle(mask2d[i], vertexPack, vertices2d);
+					vertexPack.vertices.Add(MultiplyVertexColor(vertex, maskPack.vertices[maskPack.start + i]));
 					++result;
 				}
 			}
 			return result;
 		}
 
-		private static int AddCrossPoint(VerticesView vertices, VerticesView mask, List<UIVertex> vertexBuffer) {
+		private static int AddCrossPoint(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
 			var result = 0;
-			for (int i = 0, iMax = vertices.Count; i < iMax; ++i) {
+			for (int i = 0, iMax = 3; i < iMax; ++i) {
 				var iNext = i + 1;
 				if (iMax <= iNext) iNext = 0;
-				for (int k = 0, kMax = mask.Count; k < kMax; ++k) {
+				for (int k = 0, kMax = 3; k < kMax; ++k) {
 					var kNext = k + 1;
 					if (kMax <= kNext) kNext = 0;
 
-					var crossPoint = GetCrossPoint(vertices[i], vertices[iNext], mask[k], mask[kNext]);
+					var crossPoint = GetCrossPointWithoutPoint(vertexPack.vertices[vertexPack.indices[vertexPack.start + i]], vertexPack.vertices[vertexPack.indices[vertexPack.start + iNext]], maskPack.vertices[maskPack.start + k], maskPack.vertices[maskPack.start + kNext]);
 					if (crossPoint.HasValue) {
-						vertexBuffer.Add(crossPoint.Value);
+						vertexPack.indices.Add(vertexPack.vertices.Count);
+						vertexPack.vertices.Add(crossPoint.Value);
 						++result;
 					}
 				}
 			}
 			return result;
 		}
+
+		private class CounterClockWiseUIVertex : IComparer<int> {
+			public CounterClockWiseUIVertex (List<UIVertex> vertices, Vector2 center) {
+				m_vertices = vertices;
+				m_center = center;
+			}
+			public int Compare(int x, int y) {
+				var compare = Atan2((Vector2)m_vertices[x].position - m_center) - Atan2((Vector2)m_vertices[y].position - m_center);
+				return ((0.0f < compare)
+							? 1
+						:(compare < 0.0f)
+							? -1
+							: 0
+						);
+
+			}
+			private float Atan2(Vector2 x) {
+				return Mathf.Atan2(x.y, x.x);
+			}
+			private List<UIVertex> m_vertices;
+			private Vector2 m_center;
+		}
+
+		private static readonly int[][] k_SmallConvexHullVertexIndices = new int[][]{
+														new int[]{0, 1, 2, 0, 2, 3}
+														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 4}
+														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 5, 3, 4, 5}
+														};
 
 		public static List<int> Triangulation(List<Vector2> vertices) {
 			var outerVertices = GetVerticesOfOuterTriangle(vertices);
@@ -471,69 +577,37 @@ namespace UIExtention {
 			return 0.5f * Mathf.Abs(Vector2Cross(vector01, vector02));
 		}
 
+		public static bool IsDegeneracy(Vector2[] vertices) {
+			var vector01 = vertices[1] - vertices[0];
+			var vector02 = vertices[2] - vertices[0];
+			return Mathf.Abs(Vector2Cross(vector01, vector02)) < float.Epsilon;
+		}
 		public static bool IsDegeneracy(Vector2 vertex0, Vector2 vertex1, Vector2 vertex2) {
 			var vector01 = vertex1 - vertex0;
 			var vector02 = vertex2 - vertex0;
-			var result = Vector2Cross(vector01, vector02) < float.Epsilon;
-			return result;
+			return Vector2Cross(vector01, vector02) < float.Epsilon;
 		}
 
-		private static UIVertex PickupUIVertexFromTriangle(Vector2 pickupPosition, VerticesView vertices) {
-			var inverseArea = 1.0f / GetAreaOfTriangle(vertices.GetPosition(0), vertices.GetPosition(1), vertices.GetPosition(2));
-			var weights = new[]{GetAreaOfTriangle(pickupPosition, vertices.GetPosition(1), vertices.GetPosition(2)) * inverseArea
-								, GetAreaOfTriangle(vertices.GetPosition(0), pickupPosition, vertices.GetPosition(2)) * inverseArea
-								, GetAreaOfTriangle(vertices.GetPosition(0), vertices.GetPosition(1), pickupPosition) * inverseArea
-								};
+		private static UIVertex PickupUIVertexFromTriangle(Vector2 pickupPosition, IndexedVerticesOffset vertexPack, Vector2[] vertices2d) {
+			var inverseArea = 1.0f / GetAreaOfTriangle(vertices2d[0], vertices2d[1], vertices2d[2]);
+			var vertices = vertexPack.GetEnumerable();
+			var weights = new Array3<float>(GetAreaOfTriangle(pickupPosition, vertices2d[1], vertices2d[2]) * inverseArea
+										, GetAreaOfTriangle(vertices2d[0], pickupPosition, vertices2d[2]) * inverseArea
+										, GetAreaOfTriangle(vertices2d[0], vertices2d[1], pickupPosition) * inverseArea
+										).GetEnumerable();
 			var result = WeightedAverage(vertices, weights);
 			return result;
 		}
-
-		public static List<int> TriangulationOfSmallConvexHull(List<Vector2> vertices) {
-			if (6 < vertices.Count) {
-				throw new System.ArgumentOutOfRangeException();
-			}
-
-			var result = Enumerable.Range(0, vertices.Count).ToList();
-			if (4 <= vertices.Count) {
-				result.Sort(new CounterClockWiseVector2(vertices));
-				result = k_SmallConvexHullVertexIndices[vertices.Count - 4].Select(x=>result[x]).ToList();
-			}
-
+		private static UIVertex PickupUIVertexFromTriangle(Vector2 pickupPosition, VerticesOffset vertexPack, Vector2[] vertices2d) {
+			var inverseArea = 1.0f / GetAreaOfTriangle(vertices2d[0], vertices2d[1], vertices2d[2]);
+			var vertices = vertexPack.GetEnumerable();
+			var weights = new Array3<float>(GetAreaOfTriangle(pickupPosition, vertices2d[1], vertices2d[2]) * inverseArea
+										, GetAreaOfTriangle(vertices2d[0], pickupPosition, vertices2d[2]) * inverseArea
+										, GetAreaOfTriangle(vertices2d[0], vertices2d[1], pickupPosition) * inverseArea
+										).GetEnumerable();
+			var result = WeightedAverage(vertices, weights);
 			return result;
 		}
-
-		private class CounterClockWiseVector2 : IComparer<int> {
-			public CounterClockWiseVector2 (List<Vector2> vertices) {
-				m_vertices = vertices;
-				m_center = Vector2.zero;
-				vertices.ForEach(x=>{
-					m_center.x += x.x;
-					m_center.y += x.y;
-				});
-				m_center /= vertices.Count;
-			}
-			public int Compare(int x, int y) {
-				var compare = Atan2(m_vertices[x] - m_center) - Atan2(m_vertices[y] - m_center);
-				return ((0.0f < compare)
-							? 1
-						:(compare < 0.0f)
-							? -1
-							: 0
-						);
-
-			}
-			private float Atan2(Vector2 x) {
-				return Mathf.Atan2(x.y, x.x);
-			}
-			private List<Vector2> m_vertices;
-			private Vector2 m_center;
-		}
-
-		private static readonly int[][] k_SmallConvexHullVertexIndices = new int[][]{
-														new int[]{0, 1, 2, 0, 2, 3}
-														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 4}
-														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 5, 3, 4, 5}
-														};
 
 	}
 }

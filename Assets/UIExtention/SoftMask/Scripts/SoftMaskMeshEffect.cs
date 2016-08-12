@@ -54,14 +54,15 @@ namespace UIExtention {
 			var vertices = new List<UIVertex>();
 			vh.GetUIVertexStream(vertices);
 			vh.Clear();
+			var indices = Enumerable.Range(0, vertices.Count).ToList();
 			for(int i = 0, iMax = vertices.Count; i < iMax; ++i) {
 				vertices[i] = SetPosition(vertices[i], rectTransform.TransformPoint(vertices[i].position));
 			}
-			VertexUtility.Intersect(vertices, softMaskRect.Vertices);
+			VertexUtility.Intersect(vertices, indices, softMaskRect.Vertices);
 			for(int i = 0, iMax = vertices.Count; i < iMax; ++i) {
 				vertices[i] = SetPosition(vertices[i], rectTransform.InverseTransformPoint(vertices[i].position));
 			}
-			vh.AddUIVertexTriangleStream(vertices);
+			vh.AddUIVertexStream(vertices, indices);
 		}
 
 		private static UIVertex SetPosition(UIVertex vertex, Vector3 position) {
