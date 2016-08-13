@@ -451,7 +451,7 @@ namespace UIExtention {
 			result[0].x = maxX;
 			result[0].y = maxY;
 			var diagonalLength = (result[0] - new Vector2(minX, minY)).magnitude;
-			var sideLength = diagonalLength * 1.41422f;
+			var sideLength = diagonalLength * 1.41422f; //A little bigger than sqrt(2)
 			result[1].x = maxX;
 			result[1].y = maxY - sideLength;
 			result[2].x = maxX - sideLength;
