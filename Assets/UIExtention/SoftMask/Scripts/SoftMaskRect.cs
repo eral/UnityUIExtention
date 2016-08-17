@@ -8,7 +8,7 @@ namespace UIExtention {
 	[ExecuteInEditMode]
 	[RequireComponent(typeof(RectTransform))]
 	public class SoftMaskRect : MonoBehaviour {
-		public RectOffset padding {get{return m_padding;} set{m_padding = value;}}
+		public RectOffset padding {get{return m_padding;} set{if (m_padding != value) {SetVerticesDirty();} m_padding = value;}}
 		[SerializeField] protected RectOffset m_padding = new RectOffset();
 
 		public RectTransform rectTransform {
@@ -145,6 +145,7 @@ namespace UIExtention {
 
 #if UNITY_EDITOR
 		protected virtual void OnValidate() {
+			SetVerticesDirty();
 			foreach (var effect in GetComponentsInChildren<SoftMaskMeshEffect>()) {
 				effect.SetVerticesDirty();
 			}
