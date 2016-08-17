@@ -31,6 +31,10 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 (「Screen Space - Overlay」キャンバス等の)正射影空間に配置されているオブジェクトにパースを付加  
 <img alt="Perspective" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Perspective.png" width="426">
 
+### SoftMask
+不透明度グラデーション有りの矩形マスク
+<img alt="SoftMask" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/SoftMask.gif" width="426">
+
 ### TargetLayoutElement
 他オブジェクトのLayoutElementを参照  
 <img alt="Perspective" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/TargetLayoutElement.gif" width="426">
