@@ -32,7 +32,7 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 <img alt="Perspective" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Perspective.png" width="426">
 
 ### SoftMask
-不透明度グラデーション有りの矩形マスク
+不透明度グラデーション有りの矩形マスク  
 <img alt="SoftMask" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/SoftMask.gif" width="426">
 
 ### TargetLayoutElement
