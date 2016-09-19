@@ -311,8 +311,8 @@ namespace UIExtention {
 			var result = 0;
 			for (int i = 0, iMax = 3; i < iMax; ++i) {
 				if (ContainsInConvexHull(vertices2d, mask2d[i])) {
-					vertexPack.indices.Add(vertexPack.vertices.Count);
 					var vertex = PickupUIVertexFromTriangle(mask2d[i], vertexPack, vertices2d);
+					vertexPack.indices.Add(vertexPack.vertices.Count);
 					vertexPack.vertices.Add(MultiplyVertexColor(vertex, maskPack.vertices[maskPack.start + i]));
 					++result;
 				}
