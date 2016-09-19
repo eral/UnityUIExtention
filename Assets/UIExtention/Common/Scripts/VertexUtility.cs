@@ -277,11 +277,13 @@ namespace UIExtention {
 			addCount += AddCrossPoint(vertexPack, vertices2d, maskPack, mask2d);
 			if ((3 < addCount) && (addCount <= 6)) {
 				var center = Vector2.zero;
-				foreach (var position in vertices2d) {
+				var positions = Enumerable.Range(indicesBaseCount, addCount)
+											.Select(x=>(Vector2)vertexPack.vertices[vertexPack.indices[x]].position);
+				foreach (var position in positions) {
 					center.x += position.x;
 					center.y += position.y;
 				}
-				center *= 1.0f / 3.0f;
+				center *= 1.0f / addCount;
 
 				vertexPack.indices.Sort(indicesBaseCount, addCount, new CounterClockWiseUIVertex(vertexPack.vertices, center));
 				vertexPack.indices.AddRange(k_SmallConvexHullVertexIndices[addCount - 4].Select(x=>vertexPack.indices[indicesBaseCount + x]));
