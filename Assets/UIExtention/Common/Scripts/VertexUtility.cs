@@ -275,7 +275,7 @@ namespace UIExtention {
 			}
 			addCount += AddContainsMask(vertexPack, vertices2d, maskPack, mask2d);
 			addCount += AddCrossPoint(vertexPack, vertices2d, maskPack, mask2d);
-			if ((3 < addCount) && (addCount <= 6)) {
+			if (3 < addCount) {
 				var center = Vector2.zero;
 				var positions = Enumerable.Range(indicesBaseCount, addCount)
 											.Select(x=>(Vector2)vertexPack.vertices[vertexPack.indices[x]].position);
@@ -286,7 +286,11 @@ namespace UIExtention {
 				center *= 1.0f / addCount;
 
 				vertexPack.indices.Sort(indicesBaseCount, addCount, new CounterClockWiseUIVertex(vertexPack.vertices, center));
-				vertexPack.indices.AddRange(k_SmallConvexHullVertexIndices[addCount - 4].Select(x=>vertexPack.indices[indicesBaseCount + x]));
+				for (var i = 2; i < addCount; ++i) {
+					vertexPack.indices.Add(vertexPack.indices[indicesBaseCount + 0]);
+					vertexPack.indices.Add(vertexPack.indices[indicesBaseCount + i - 1]);
+					vertexPack.indices.Add(vertexPack.indices[indicesBaseCount + i]);
+				}
 			} else if ((addCount == 0) || (addCount == 3)) {
 				return;
 			}
@@ -361,12 +365,6 @@ namespace UIExtention {
 			private List<UIVertex> m_vertices;
 			private Vector2 m_center;
 		}
-
-		private static readonly int[][] k_SmallConvexHullVertexIndices = new int[][]{
-														new int[]{0, 1, 2, 0, 2, 3}
-														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 4}
-														, new int[]{0, 1, 2, 0, 2, 3, 0, 3, 5, 3, 4, 5}
-														};
 
 		public static List<int> Triangulation(List<Vector2> vertices) {
 			var outerVertices = GetVerticesOfOuterTriangle(vertices);
