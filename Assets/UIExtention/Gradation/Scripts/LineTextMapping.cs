@@ -11,8 +11,8 @@ namespace UIExtention {
 
 		protected override void Initialize() {
 			index = 0;
-			normalizeWeight = new Vector2(1.0f/ (localCorners[(int)RectangleIndex.LowerRight].x - localCorners[(int)RectangleIndex.UpperLeft].x)
-										, 1.0f/ (localCorners[(int)RectangleIndex.LowerRight].y - localCorners[(int)RectangleIndex.UpperLeft].y)
+			normalizeWeight = new Vector2(1.0f/ (localCorners[(int)RectangleIndex.UpperRight].x - localCorners[(int)RectangleIndex.LowerLeft].x)
+										, 1.0f/ (localCorners[(int)RectangleIndex.UpperRight].y - localCorners[(int)RectangleIndex.LowerLeft].y)
 										);
 			rectX = 0.0f;
 			rectWidth = 1.0f;
@@ -29,7 +29,7 @@ namespace UIExtention {
 			var charMaxY = info.maxY * text.fontSize / (float)info.size;
 
 			var rect = new Rect(rectX
-								, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].y - (lineFontMaxY - charMaxY) * normalizeWeight.y
+								, rectangleNormalizePositions[(int)RectangleIndex.LowerLeft].y - (lineFontMaxY - charMaxY) * normalizeWeight.y
 								, rectWidth
 								, fontHeight * normalizeWeight.y
 								);

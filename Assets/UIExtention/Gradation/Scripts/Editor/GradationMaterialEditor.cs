@@ -112,7 +112,7 @@ namespace UIExtention {
 				for (int x = 0, xMax = grid.xThresholds.Length; x < xMax; ++x) {
 					var index = x + y * xMax;
 					vertices[index] = new Vector3(grid.xThresholds[x] * 2.0f - 1.0f
-												, 1.0f - grid.yThresholds[y] * 2.0f
+												, grid.yThresholds[y] * 2.0f - 1.0f
 												, 0.0f
 												);
 				}
@@ -121,7 +121,7 @@ namespace UIExtention {
 				for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
 					var index = x + y * xMax + mainVertexCount;
 					vertices[index] = new Vector3((grid.xThresholds[x] + grid.xThresholds[x + 1]) - 1.0f
-												, 1.0f - (grid.yThresholds[y] + grid.yThresholds[y + 1])
+												, (grid.yThresholds[y] + grid.yThresholds[y + 1]) - 1.0f
 												, 0.0f
 												);
 				}

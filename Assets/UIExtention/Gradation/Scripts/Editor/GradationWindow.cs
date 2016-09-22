@@ -295,7 +295,7 @@ namespace UIExtention {
 			for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
 				var key = material.keys[i];
 				var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, key.position.x)
-										, Mathf.Lerp(r.yMin, r.yMax, key.position.y)
+										, Mathf.Lerp(r.yMax, r.yMin, key.position.y)
 										);
 				if ((Event.current.mousePosition - position).sqrMagnitude < (k_MakerRadius * k_MakerRadius)) {
 					focus = new[]{i};
@@ -318,7 +318,7 @@ namespace UIExtention {
 			for(int i = 0, i_max = material.keys.Count; i < i_max; ++i) {
 				var key = material.keys[i];
 				var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, key.position.x)
-										, Mathf.Lerp(r.yMin, r.yMax, key.position.y)
+										, Mathf.Lerp(r.yMax, r.yMin, key.position.y)
 										);
 				if ((Event.current.mousePosition - position).sqrMagnitude < (k_MakerRadius * k_MakerRadius)) {
 					focus = new[]{i};
@@ -377,7 +377,7 @@ namespace UIExtention {
 					Handles.DrawLine(new Vector3(x, r.yMin, 0.0f), new Vector3(x, r.yMax, 0.0f));
 				}
 				foreach (var yThreshold in material.keys.Select(x=>x.position.y).Distinct()) {
-					var y = Mathf.Lerp(r.yMin, r.yMax, yThreshold);
+					var y = Mathf.Lerp(r.yMax, r.yMin, yThreshold);
 					Handles.DrawLine(new Vector3(r.xMin, y, 0.0f), new Vector3(r.xMax, y, 0.0f));
 				}
 			}
@@ -399,7 +399,7 @@ namespace UIExtention {
 			var state = (Vector2)GUIUtility.GetStateObject(typeof(Vector2), controlID);
 
 			var position = new Vector2(Mathf.Lerp(r.xMin, r.xMax, value.x)
-									, Mathf.Lerp(r.yMin, r.yMax, value.y)
+									, Mathf.Lerp(r.yMax, r.yMin, value.y)
 									);
 			switch (Event.current.GetTypeForControl(controlID)) {
 			case EventType.Repaint:
@@ -459,7 +459,7 @@ namespace UIExtention {
 						}
 					}
 					value = new Vector2(Mathf.InverseLerp(r.xMin, r.xMax, movedPosition.x)
-										, Mathf.InverseLerp(r.yMin, r.yMax, movedPosition.y)
+										, Mathf.InverseLerp(r.yMax, r.yMin, movedPosition.y)
 										);
 					GUI.changed = true;
 					Event.current.Use();
@@ -498,7 +498,7 @@ namespace UIExtention {
 				var yThresholds = indices.Select(x=>material.keys[x])
 										.Select(x=>x.position.y)
 										.Distinct()
-										.Select(x=>Mathf.Lerp(r.yMin, r.yMax, x))
+										.Select(x=>Mathf.Lerp(r.yMax, r.yMin, x))
 										.ToArray();
 				for (int i = 0, iMax = Mathf.Max(xThresholds.Length, yThresholds.Length); i < iMax; ++i) {
 					var result = Vector2.zero;

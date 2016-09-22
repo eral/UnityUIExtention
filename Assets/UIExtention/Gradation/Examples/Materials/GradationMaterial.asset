@@ -15,31 +15,31 @@ MonoBehaviour:
   m_AlphaBlend: 0
   m_TextMapping: 0
   m_Keys:
-  - position: {x: 0, y: 0}
+  - position: {x: 0, y: 1}
     color: {r: 1, g: 0, b: 0, a: 1}
-  - position: {x: 1, y: 0}
+  - position: {x: 1, y: 1}
     color: {r: 1, g: 0, b: 0, a: 1}
-  - position: {x: 0, y: 0.16666667}
+  - position: {x: 0, y: 0.8333333}
     color: {r: 1, g: 0, b: 1, a: 1}
-  - position: {x: 1, y: 0.16666667}
+  - position: {x: 1, y: 0.8333333}
     color: {r: 1, g: 0, b: 1, a: 1}
-  - position: {x: 0, y: 0.33333334}
+  - position: {x: 0, y: 0.6666667}
     color: {r: 0, g: 0, b: 1, a: 1}
-  - position: {x: 1, y: 0.33333334}
+  - position: {x: 1, y: 0.6666667}
     color: {r: 0, g: 0, b: 1, a: 1}
   - position: {x: 0, y: 0.5}
     color: {r: 0, g: 1, b: 1, a: 1}
   - position: {x: 1, y: 0.5}
     color: {r: 0, g: 1, b: 1, a: 1}
-  - position: {x: 0, y: 0.6666667}
+  - position: {x: 0, y: 0.3333333}
     color: {r: 0, g: 1, b: 0, a: 1}
-  - position: {x: 1, y: 0.6666667}
+  - position: {x: 1, y: 0.3333333}
     color: {r: 0, g: 1, b: 0, a: 1}
-  - position: {x: 0, y: 0.8333333}
+  - position: {x: 0, y: 0.1666667}
     color: {r: 1, g: 1, b: 0, a: 1}
-  - position: {x: 1, y: 0.8333333}
+  - position: {x: 1, y: 0.1666667}
     color: {r: 1, g: 1, b: 0, a: 1}
-  - position: {x: 0, y: 1}
+  - position: {x: 0, y: 0}
     color: {r: 1, g: 0, b: 0, a: 1}
-  - position: {x: 1, y: 1}
+  - position: {x: 1, y: 0}
     color: {r: 1, g: 0, b: 0, a: 1}

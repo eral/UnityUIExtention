@@ -26,10 +26,10 @@ namespace UIExtention {
 		private RectTransform m_rectTransform;
 
 		public enum RectangleIndex {
+			LowerLeft,
 			UpperLeft,
 			UpperRight,
 			LowerRight,
-			LowerLeft,
 		}
 
 		public override void ModifyMesh(VertexHelper vh) {
@@ -119,14 +119,14 @@ namespace UIExtention {
 				if (position.x == upperLeftPosition.x) {
 					rectangleIndex = 0x0;
 				} else if (position.x == lowerRightPosition.x) {
-					rectangleIndex = 0x1;
+					rectangleIndex = 0x3;
 				} else {
 					return null;
 				}
-				if (position.y == upperLeftPosition.y) {
+				if (position.y == lowerRightPosition.y) {
 					rectangleIndex ^= 0x0;
-				} else if (position.y == lowerRightPosition.y) {
-					rectangleIndex ^= 0x3;
+				} else if (position.y == upperLeftPosition.y) {
+					rectangleIndex ^= 0x1;
 				} else {
 					return null;
 				}
@@ -139,20 +139,20 @@ namespace UIExtention {
 			var rectangleVertices = rectangleIndices.Select(x=>vertices[x]).ToArray();
 			var rectangleNormalizePositions = new Vector2[rectangleVertices.Length];
 			for (int i = 0, iMax = rectangleVertices.Length; i < iMax; ++i) {
-				rectangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.UpperLeft].x, localCorners[(int)RectangleIndex.LowerRight].x, rectangleVertices[i].position.x)
-												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerRight].y, localCorners[(int)RectangleIndex.UpperLeft].y, rectangleVertices[i].position.y)
+				rectangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].x, localCorners[(int)RectangleIndex.UpperRight].x, rectangleVertices[i].position.x)
+												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].y, localCorners[(int)RectangleIndex.UpperRight].y, rectangleVertices[i].position.y)
 												);
 			}
 
 			GradationMaterial.Grid gridUnit = textMapping.GetGridUnit(rectangleIndices, rectangleNormalizePositions);
 
-			var xMin = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].x);
+			var xMin = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerLeft].x);
 			if (xMin < 0) xMin = ~xMin - 1;
-			var xMax = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].x);
+			var xMax = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperRight].x);
 			if (xMax < 0) xMax = ~xMax;
-			var yMin = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperLeft].y);
+			var yMin = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerLeft].y);
 			if (yMin < 0) yMin = ~yMin - 1;
-			var yMax = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerRight].y);
+			var yMax = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperRight].y);
 			if (yMax < 0) yMax = ~yMax;
 
 			for (int y = yMin; y < yMax; ++y) {
@@ -166,8 +166,8 @@ namespace UIExtention {
 			var gridPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
 			var gridColors = new Color[System.Enum.GetValues(typeof(RectangleIndex)).Length];
 			for (int i = 0, iMax = System.Enum.GetValues(typeof(RectangleIndex)).Length; i < iMax; ++i) {
-				var xOffset = (i ^ (i >> 1)) & 0x01;
-				var yOffest = i >> 1;
+				var xOffset = i >> 1;
+				var yOffest = (i ^ (i >> 1)) & 0x01;
 				var xIndex = x + xOffset;
 				var yIndex = y + yOffest;
 				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
@@ -177,13 +177,13 @@ namespace UIExtention {
 			System.Func<Vector2, UIVertex> PickupUIVertex = (position)=>{
 				var v = position;
 				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					v[i] = Mathf.InverseLerp(rectangleNormalizePositions[(int)RectangleIndex.UpperLeft][i], rectangleNormalizePositions[(int)RectangleIndex.LowerRight][i], v[i]);
+					v[i] = Mathf.InverseLerp(rectangleNormalizePositions[(int)RectangleIndex.LowerLeft][i], rectangleNormalizePositions[(int)RectangleIndex.UpperRight][i], v[i]);
 				}
 				var result = Lerp2D<UIVertex>(rectangleVertices, v, LerpUIVertex);
 
 				var c = position;
 				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.UpperLeft][i], gridPositions[(int)RectangleIndex.LowerRight][i], c[i]);
+					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.LowerLeft][i], gridPositions[(int)RectangleIndex.UpperRight][i], c[i]);
 				}
 				var gridColor = Lerp2D<Color>(gridColors, c, Color.Lerp);
 				result.color = BlendColor(result.color, gridColor);
@@ -194,7 +194,7 @@ namespace UIExtention {
 			var maskedPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
 			for (int i = 0, iMax = maskedPositions.Length; i < iMax; ++i) {
 				for (int k = 0, kMax = 2; k < kMax; ++k) {
-					maskedPositions[i][k] = Mathf.Clamp(rectangleNormalizePositions[i][k], gridPositions[(int)RectangleIndex.UpperLeft][k], gridPositions[(int)RectangleIndex.LowerRight][k]);
+					maskedPositions[i][k] = Mathf.Clamp(rectangleNormalizePositions[i][k], gridPositions[(int)RectangleIndex.LowerLeft][k], gridPositions[(int)RectangleIndex.UpperRight][k]);
 				}
 			}
 			maskedPositions = maskedPositions.Distinct(new Vector2Approximately()).ToArray();
@@ -209,8 +209,8 @@ namespace UIExtention {
 			var triangleVertices = triangleIndices.Select(x=>vertices[x]).ToArray();
 			var triangleNormalizePositions = new Vector2[triangleVertices.Length];
 			for (int i = 0, iMax = triangleVertices.Length; i < iMax; ++i) {
-				triangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.UpperLeft].x, localCorners[(int)RectangleIndex.LowerRight].x, triangleVertices[i].position.x)
-												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerRight].y, localCorners[(int)RectangleIndex.UpperLeft].y, triangleVertices[i].position.y)
+				triangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].x, localCorners[(int)RectangleIndex.UpperRight].x, triangleVertices[i].position.x)
+												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].y, localCorners[(int)RectangleIndex.UpperRight].y, triangleVertices[i].position.y)
 												);
 			}
 
@@ -234,8 +234,8 @@ namespace UIExtention {
 			var gridPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
 			var gridColors = new Color[System.Enum.GetValues(typeof(RectangleIndex)).Length];
 			for (int i = 0, iMax = System.Enum.GetValues(typeof(RectangleIndex)).Length; i < iMax; ++i) {
-				var xOffset = (i ^ (i >> 1)) & 0x01;
-				var yOffest = i >> 1;
+				var xOffset = i >> 1;
+				var yOffest = (i ^ (i >> 1)) & 0x01;
 				var xIndex = x + xOffset;
 				var yIndex = y + yOffest;
 				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
@@ -251,7 +251,7 @@ namespace UIExtention {
 
 				var c = position;
 				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.UpperLeft][i], gridPositions[(int)RectangleIndex.LowerRight][i], c[i]);
+					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.LowerLeft][i], gridPositions[(int)RectangleIndex.UpperRight][i], c[i]);
 				}
 				var gridColor = Lerp2D<Color>(gridColors, c, Color.Lerp);
 				result.color = BlendColor(result.color, gridColor);
@@ -416,8 +416,8 @@ namespace UIExtention {
 		}
 
 		private static T Lerp2D<T>(T[] rectangleValues, Vector2 f, System.Func<T, T, float, T> lerp) {
-			return lerp(lerp(rectangleValues[(int)RectangleIndex.UpperLeft], rectangleValues[(int)RectangleIndex.UpperRight], f.x)
-						, lerp(rectangleValues[(int)RectangleIndex.LowerLeft], rectangleValues[(int)RectangleIndex.LowerRight], f.x)
+			return lerp(lerp(rectangleValues[(int)RectangleIndex.LowerLeft], rectangleValues[(int)RectangleIndex.LowerRight], f.x)
+						, lerp(rectangleValues[(int)RectangleIndex.UpperLeft], rectangleValues[(int)RectangleIndex.UpperRight], f.x)
 						, f.y
 						);
 		}
