@@ -56,292 +56,54 @@ namespace UIExtention {
 			}
 			vh.Clear();
 
-			Vector3[] localCorners = new Vector3[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			rectTransform.GetLocalCorners(localCorners);
-			var grid = material.GetGrid();
+			var rectTransformRect = rectTransform.rect;
+			var maskMesh = material.GetMesh();
+			var mask = maskMesh.GetIndices(0).Select(x=>new UIVertex(){position = Vector2.Scale(maskMesh.vertices[x], rectTransformRect.size) + rectTransformRect.min
+																		, color = maskMesh.colors[x]
+																		}
+													)
+											.ToList();
 
-			Text text = GetComponent<Text>();
-			BaseTextMapping textMapping;
+			var blend = GetBlendUIVertex();
+
+			var text = GetComponent<Text>();
 			if (text == null) {
-				textMapping = new RectTransformTextMapping();
+				RectTransformIntersect(vertices, indices, mask, blend);
 			} else switch (material.textMapping) {
-			case GradationMaterial.TextMapping.Line:		textMapping = new LineTextMapping();			break;
-			case GradationMaterial.TextMapping.Character:	textMapping = new CharacterTextMapping();		break;
-			default:										textMapping = new RectTransformTextMapping();	break;
+			case GradationMaterial.TextMapping.Line:
+				LineIntersect(vertices, indices, mask, blend, text);
+				break;
+			case GradationMaterial.TextMapping.Character:
+				CharacterIntersect(vertices, indices, mask, blend, text);
+				break;
+			case GradationMaterial.TextMapping.RectTransform:
+			default:
+				RectTransformIntersect(vertices, indices, mask, blend);
+				break;
 			}
-			textMapping.Initialize(rectTransform, text, vertices, indices, grid, localCorners);
 
-			textMapping.PrePass(vh);
-			for (int i = 0, iMax = indices.Count - 3; i <= iMax; ) {
-				int[] rectangleIndices = null;
-				if (i <= indices.Count - 6) {
-					//四角形の可能性がある
-					var hexIndices = Enumerable.Range(i, 6)
-												.Select(x=>indices[x])
-												.ToArray();
-					rectangleIndices = GetRectangleIndices(vertices, hexIndices);
-				}
-				if (rectangleIndices != null) {
-					//四角形
-					ModifyRectangle(vh, vertices, rectangleIndices, grid, localCorners, textMapping);
-					i += 6;
-				} else {
-					//三角形
-					var triangleIndices = Enumerable.Range(i, 3)
-													.Select(x=>indices[x])
-													.ToArray();
-					ModifyTriangle(vh, vertices, triangleIndices, grid, localCorners);
-					i += 3;
-				}
-			}
-			textMapping.PostPass(vh);
+			vh.AddUIVertexStream(vertices, indices);
 		}
 
-		private int[] GetRectangleIndices(List<UIVertex> vertices, int[] hexIndices) {
-			if (hexIndices.Length != 6) {
-				return null;
-			}
-			var result = hexIndices.Distinct().ToArray();
-			if (result.Length != System.Enum.GetValues(typeof(RectangleIndex)).Length) {
-				return null;
-			}
-			var upperLeftPosition = new Vector2(float.MaxValue, float.MinValue);
-			var lowerRightPosition = new Vector2(float.MinValue, float.MaxValue);
-			foreach (var position in hexIndices.Select(x=>vertices[x].position)) {
-				upperLeftPosition.x = Mathf.Min(upperLeftPosition.x, position.x);
-				upperLeftPosition.y = Mathf.Max(upperLeftPosition.y, position.y);
-				lowerRightPosition.x = Mathf.Max(lowerRightPosition.x, position.x);
-				lowerRightPosition.y = Mathf.Min(lowerRightPosition.y, position.y);
-			}
-			foreach (var index in hexIndices) {
-				var position = vertices[index].position;
-				var rectangleIndex = 0;
-				if (position.x == upperLeftPosition.x) {
-					rectangleIndex = 0x0;
-				} else if (position.x == lowerRightPosition.x) {
-					rectangleIndex = 0x3;
-				} else {
-					return null;
-				}
-				if (position.y == lowerRightPosition.y) {
-					rectangleIndex ^= 0x0;
-				} else if (position.y == upperLeftPosition.y) {
-					rectangleIndex ^= 0x1;
-				} else {
-					return null;
-				}
-				result[rectangleIndex] = index;
-			}
-			return result;
-		}
-
-		private void ModifyRectangle(VertexHelper vh, List<UIVertex> vertices, int[] rectangleIndices, GradationMaterial.Grid grid, Vector3[] localCorners, BaseTextMapping textMapping) {
-			var rectangleVertices = rectangleIndices.Select(x=>vertices[x]).ToArray();
-			var rectangleNormalizePositions = new Vector2[rectangleVertices.Length];
-			for (int i = 0, iMax = rectangleVertices.Length; i < iMax; ++i) {
-				rectangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].x, localCorners[(int)RectangleIndex.UpperRight].x, rectangleVertices[i].position.x)
-												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].y, localCorners[(int)RectangleIndex.UpperRight].y, rectangleVertices[i].position.y)
-												);
-			}
-
-			GradationMaterial.Grid gridUnit = textMapping.GetGridUnit(rectangleIndices, rectangleNormalizePositions);
-
-			var xMin = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerLeft].x);
-			if (xMin < 0) xMin = ~xMin - 1;
-			var xMax = Array.BinarySearch<float>(gridUnit.xThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperRight].x);
-			if (xMax < 0) xMax = ~xMax;
-			var yMin = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.LowerLeft].y);
-			if (yMin < 0) yMin = ~yMin - 1;
-			var yMax = Array.BinarySearch<float>(gridUnit.yThresholds, rectangleNormalizePositions[(int)RectangleIndex.UpperRight].y);
-			if (yMax < 0) yMax = ~yMax;
-
-			for (int y = yMin; y < yMax; ++y) {
-				for (int x = xMin; x < xMax; ++x) {
-					ModifyRectangleGrid(vh, rectangleVertices, gridUnit, x, y, rectangleNormalizePositions);
-				}
-			}
-		}
-
-		private void ModifyRectangleGrid(VertexHelper vh, UIVertex[] rectangleVertices, GradationMaterial.Grid grid, int x, int y, Vector2[] rectangleNormalizePositions) {
-			var gridPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			var gridColors = new Color[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			for (int i = 0, iMax = System.Enum.GetValues(typeof(RectangleIndex)).Length; i < iMax; ++i) {
-				var xOffset = i >> 1;
-				var yOffest = (i ^ (i >> 1)) & 0x01;
-				var xIndex = x + xOffset;
-				var yIndex = y + yOffest;
-				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
-				gridColors[i] = GetGridColor(grid, xIndex, yIndex);
-			}
-
-			System.Func<Vector2, UIVertex> PickupUIVertex = (position)=>{
-				var v = position;
-				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					v[i] = Mathf.InverseLerp(rectangleNormalizePositions[(int)RectangleIndex.LowerLeft][i], rectangleNormalizePositions[(int)RectangleIndex.UpperRight][i], v[i]);
-				}
-				var result = Lerp2D<UIVertex>(rectangleVertices, v, LerpUIVertex);
-
-				var c = position;
-				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.LowerLeft][i], gridPositions[(int)RectangleIndex.UpperRight][i], c[i]);
-				}
-				var gridColor = Lerp2D<Color>(gridColors, c, Color.Lerp);
-				result.color = BlendColor(result.color, gridColor);
-
-				return result;
-			};
-
-			var maskedPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			for (int i = 0, iMax = maskedPositions.Length; i < iMax; ++i) {
-				for (int k = 0, kMax = 2; k < kMax; ++k) {
-					maskedPositions[i][k] = Mathf.Clamp(rectangleNormalizePositions[i][k], gridPositions[(int)RectangleIndex.LowerLeft][k], gridPositions[(int)RectangleIndex.UpperRight][k]);
-				}
-			}
-			maskedPositions = maskedPositions.Distinct(new Vector2Approximately()).ToArray();
-
-			if (maskedPositions.Length == 4) {
-				var maskedVertices = maskedPositions.Select(z=>PickupUIVertex(z)).ToArray();
-				vh.AddUIVertexQuad(maskedVertices);
-			}
-		}
-
-		private void ModifyTriangle(VertexHelper vh, List<UIVertex> vertices, int[] triangleIndices, GradationMaterial.Grid grid, Vector3[] localCorners) {
-			var triangleVertices = triangleIndices.Select(x=>vertices[x]).ToArray();
-			var triangleNormalizePositions = new Vector2[triangleVertices.Length];
-			for (int i = 0, iMax = triangleVertices.Length; i < iMax; ++i) {
-				triangleNormalizePositions[i] = new Vector2(Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].x, localCorners[(int)RectangleIndex.UpperRight].x, triangleVertices[i].position.x)
-												, Mathf.InverseLerp(localCorners[(int)RectangleIndex.LowerLeft].y, localCorners[(int)RectangleIndex.UpperRight].y, triangleVertices[i].position.y)
-												);
-			}
-
-			var xMin = Array.BinarySearch<float>(grid.xThresholds, triangleNormalizePositions.Min(x=>x.x));
-			if (xMin < 0) xMin = ~xMin - 1;
-			var xMax = Array.BinarySearch<float>(grid.xThresholds, triangleNormalizePositions.Max(x=>x.x));
-			if (xMax < 0) xMax = ~xMax;
-			var yMin = Array.BinarySearch<float>(grid.yThresholds, triangleNormalizePositions.Min(x=>x.y));
-			if (yMin < 0) yMin = ~yMin - 1;
-			var yMax = Array.BinarySearch<float>(grid.yThresholds, triangleNormalizePositions.Max(x=>x.y));
-			if (yMax < 0) yMax = ~yMax;
-
-			for (int y = yMin; y < yMax; ++y) {
-				for (int x = xMin; x < xMax; ++x) {
-					ModifyTriangleGrid(vh, triangleVertices, grid, x, y, triangleNormalizePositions);
-				}
-			}
-		}
-
-		private void ModifyTriangleGrid(VertexHelper vh, UIVertex[] triangleVertices, GradationMaterial.Grid grid, int x, int y, Vector2[] triangleNormalizePositions) {
-			var gridPositions = new Vector2[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			var gridColors = new Color[System.Enum.GetValues(typeof(RectangleIndex)).Length];
-			for (int i = 0, iMax = System.Enum.GetValues(typeof(RectangleIndex)).Length; i < iMax; ++i) {
-				var xOffset = i >> 1;
-				var yOffest = (i ^ (i >> 1)) & 0x01;
-				var xIndex = x + xOffset;
-				var yIndex = y + yOffest;
-				gridPositions[i] = GetGridPositon(grid, xIndex, yIndex);
-				gridColors[i] = GetGridColor(grid, xIndex, yIndex);
-			}
-
-			System.Func<Vector2, UIVertex> PickupUIVertex = (position)=>{
-				var inverseArea = 1.0f / GetAreaOfTriangle(triangleNormalizePositions[0], triangleNormalizePositions[1], triangleNormalizePositions[2]);
-				var result = UIVertexTriWeightedAverage(triangleVertices[0], GetAreaOfTriangle(position, triangleNormalizePositions[1], triangleNormalizePositions[2]) * inverseArea
-													, triangleVertices[1], GetAreaOfTriangle(triangleNormalizePositions[0],position , triangleNormalizePositions[2]) * inverseArea
-													, triangleVertices[2], GetAreaOfTriangle(triangleNormalizePositions[0], triangleNormalizePositions[1], position) * inverseArea
-													);
-
-				var c = position;
-				for (int i = 0, iMax = 2; i < iMax; ++i) {
-					c[i] = Mathf.InverseLerp(gridPositions[(int)RectangleIndex.LowerLeft][i], gridPositions[(int)RectangleIndex.UpperRight][i], c[i]);
-				}
-				var gridColor = Lerp2D<Color>(gridColors, c, Color.Lerp);
-				result.color = BlendColor(result.color, gridColor);
-
-				return result;
-			};
-
-			var maskedPositions = new List<Vector2>(6);
-			{
-				var overlap = OverlapPosition(triangleNormalizePositions, gridPositions[0]);
-				for (int i = 0, iMax = gridPositions.Length; i < iMax; ++i) {
-					if (overlap) {
-						maskedPositions.Add(gridPositions[i]);
-					}
-					var nextIndex = (i + 1) % iMax;
-					var nextOverlap = OverlapPosition(triangleNormalizePositions, gridPositions[nextIndex]);
-					if (!overlap || !nextOverlap) {
-						var crossPositions = GetCrossPositions(gridPositions[i], gridPositions[nextIndex], triangleNormalizePositions);
-						maskedPositions.AddRange(crossPositions);
-					}
-					overlap = nextOverlap;
-				}
-			}
-			for (int i = 0, iMax = triangleNormalizePositions.Length; i < iMax; ++i) {
-				var overlap = OverlapPosition(gridPositions, triangleNormalizePositions[i]);
-				if (overlap) {
-					maskedPositions.Add(triangleNormalizePositions[i]);
-				}
-			}
-			maskedPositions = maskedPositions.Distinct(new Vector2Approximately()).ToList();
-
-			if (3 <= maskedPositions.Count) {
-				var currentVertCount = vh.currentVertCount;
-				var maskedVertices = maskedPositions.Select(z=>PickupUIVertex(z)).ToArray();
-				foreach (var maskedvertex in maskedVertices) {
-					vh.AddVert(maskedvertex);
-				}
-				var triangleIndices = GetTriangleIndices(maskedPositions);
-				for (int i = 0, iMax = triangleIndices.Count; i < iMax; i += 3) {
-					vh.AddTriangle(currentVertCount + triangleIndices[i]
-									, currentVertCount + triangleIndices[i + 1]
-									, currentVertCount + triangleIndices[i + 2]);
-				}
-			}
-		}
-
-		private static Vector2 GetGridPositon(GradationMaterial.Grid grid, int x, int y) {
-			Vector2 result;
-			if (x < 0) {
-				result.x = float.NegativeInfinity;
-			} else if (grid.xThresholds.Length <= x) {
-				result.x = float.PositiveInfinity;
-			} else {
-				result.x = grid.xThresholds[x];
-			}
-			if (y < 0) {
-				result.y = float.NegativeInfinity;
-			} else if (grid.yThresholds.Length <= y) {
-				result.y = float.PositiveInfinity;
-			} else {
-				result.y = grid.yThresholds[y];
-			}
-			return result;
-		}
-
-		private static Color GetGridColor(GradationMaterial.Grid grid, int x, int y) {
-			x = Mathf.Clamp(x, 0, grid.xThresholds.Length - 1);
-			y = Mathf.Clamp(y, 0, grid.yThresholds.Length - 1);
-			return grid.GetColor(x, y);
-		}
-
-		private static System.Func<float, float, float> CreateBlendFunction(GradationMaterial.Blend blend) {
+		private static System.Func<int, int, int> CreateBlendFunction(GradationMaterial.Blend blend) {
 			switch (blend) {
 			case GradationMaterial.Blend.Multiply:
 			default:
-				return (x,y)=>x * y;
+				return (x,y)=>x * y / 0xFF;
 			case GradationMaterial.Blend.Override:
 				return (x,y)=>y;
 			case GradationMaterial.Blend.Ignore:
 				return (x,y)=>x;
 			case GradationMaterial.Blend.Add:
-				return (x,y)=>x + y;
+				return (x,y)=>Mathf.Min(x + y, 0xFF);
 			case GradationMaterial.Blend.Subtract:
-				return (x,y)=>x - y;
+				return (x,y)=>Mathf.Max(0, x - y);
 			case GradationMaterial.Blend.Screen:
-				return (x,y)=>1.0f - (1.0f - x) * (1.0f - y);
+				return (x,y)=>0xFF - ((0xFF - x) * (0xFF - y) / 0xFF);
 			case GradationMaterial.Blend.HardLight:
-				return (x,y)=>((y < 0.5f)? (x * y): (1.0f - (1.0f - x) * (1.0f - y)));
+				return (x,y)=>(y < 0x80)? (x * y / 0xFF): (0xFF - ((0xFF - x) * (0xFF - y) / 0xFF));
 			case GradationMaterial.Blend.HardLightFast:
-				return (x,y)=>((y < 0.5f)? (x * y): (x + y));
+				return (x,y)=>(y < 0x80)? (x * y / 0xFF): Mathf.Min(x + y, 0xFF);
 			case GradationMaterial.Blend.Darken:
 				return (x,y)=>Mathf.Min(x, y);
 			case GradationMaterial.Blend.Lighten:
@@ -349,172 +111,190 @@ namespace UIExtention {
 			}
 		}
 
-		private Color BlendColor(Color vertexColor, Color gridColor) {
-			Color blendColor;
+		private System.Func<UIVertex, UIVertex, UIVertex> GetBlendUIVertex() {
+			if (weight <= 0.0f) {
+				return BlendUIVertex0;
+			} else if (1.0f <= weight) {
+				return BlendUIVertex1;
+			} else {
+				return BlendUIVertex;
+			}
+		}
 
+		private static UIVertex BlendUIVertex0(UIVertex vertex, UIVertex mask) {
+			return vertex;
+		}
+		private UIVertex BlendUIVertex(UIVertex vertex, UIVertex mask) {
+			Color32 color;
 			var blendFunction = CreateBlendFunction(material.colorBlend);
-			blendColor.r = blendFunction(vertexColor.r, gridColor.r);
-			blendColor.g = blendFunction(vertexColor.g, gridColor.g);
-			blendColor.b = blendFunction(vertexColor.b, gridColor.b);
+			color.r = (byte)blendFunction(vertex.color.r, mask.color.r);
+			color.g = (byte)blendFunction(vertex.color.g, mask.color.g);
+			color.b = (byte)blendFunction(vertex.color.b, mask.color.b);
 			blendFunction = CreateBlendFunction(material.alphaBlend);
-			blendColor.a = blendFunction(vertexColor.a, gridColor.a);
+			color.a = (byte)blendFunction(vertex.color.a, mask.color.a);
 
-			var result = Color.Lerp(vertexColor, blendColor, weight);
-			return result;
+			vertex.color = Color32.Lerp(vertex.color, color, weight);
+			return vertex;
+		}
+		private UIVertex BlendUIVertex1(UIVertex vertex, UIVertex mask) {
+			Color32 color;
+			var blendFunction = CreateBlendFunction(material.colorBlend);
+			color.r = (byte)blendFunction(vertex.color.r, mask.color.r);
+			color.g = (byte)blendFunction(vertex.color.g, mask.color.g);
+			color.b = (byte)blendFunction(vertex.color.b, mask.color.b);
+			blendFunction = CreateBlendFunction(material.alphaBlend);
+			color.a = (byte)blendFunction(vertex.color.a, mask.color.a);
+
+			vertex.color = color;
+			return vertex;
 		}
 
-		private static List<int> GetTriangleIndices(List<Vector2> positions) {
-			var result = new List<int>(){0, 1, 2};
+		private static void RectTransformIntersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask, System.Func<UIVertex, UIVertex, UIVertex> blend) {
+			VertexUtility.Intersect(vertices, indices, mask, blend);
+		}
 
-			if (0 < positions.Count) {
-				var pairs = new List<KeyValuePair<int, int>>((positions.Count - 3) * 2 + 5);
-				pairs.Add(new KeyValuePair<int, int>(0, 1));
-				pairs.Add(new KeyValuePair<int, int>(0, 2));
-				pairs.Add(new KeyValuePair<int, int>(1, 2));
+		private void LineIntersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask, System.Func<UIVertex, UIVertex, UIVertex> blend, Text text) {
+			var originalVerticesCount = vertices.Count;
+			var originalIndicesCount = indices.Count;
+			var rectVertices = new List<UIVertex>(mask.Count * 2);
+			var rectIndices = new List<int>(mask.Count * 2);
 
-				for (int i = 3, iMax = positions.Count; i < iMax; ++i) {
-					for(int k = 0, kMax = pairs.Count; k < kMax; ++k) {
-						var currentPair = pairs[k];
-						var isCross = pairs.Any(x=>{
-													if ((currentPair.Key != x.Key) && (currentPair.Key != x.Value)) {
-														var p = GetProgressOfCrossPosition(positions[i], positions[currentPair.Key], positions[x.Key], positions[x.Value]);
-														if (p.HasValue) {
-															return true;
-														}
-													}
-													if ((currentPair.Value != x.Key) && (currentPair.Value != x.Value)) {
-														var p = GetProgressOfCrossPosition(positions[i], positions[currentPair.Value], positions[x.Key], positions[x.Value]);
-														if (p.HasValue) {
-															return true;
-														}
-													}
-													return false;
-											});
-						if (!isCross) {
-							result.AddRange(new[]{currentPair.Key, currentPair.Value, i});
-							pairs.Add(new KeyValuePair<int, int>(currentPair.Key, i));
-							pairs.Add(new KeyValuePair<int, int>(currentPair.Value, i));
-						}
-					}
+			var rectTransformRect = rectTransform.rect;
+
+			var srcIndex = 0;
+			var dstIndex = 0;
+			for (int i = 0, iMax = text.text.Length; i < iMax; ++i) {
+				var ch = text.text[i];
+				CharacterInfo info;
+				if (!text.font.GetCharacterInfo(ch, out info)) {
+					info = text.font.characterInfo.Where(x=>x.index == ch).FirstOrDefault();
 				}
-			}
-	
-			return result;
-		}
 
-		private static float Vector2Cross(Vector2 lhs, Vector2 rhs) {
-			return lhs.x * rhs.y - lhs.y * rhs.x;
-		}
+				var boundingBox = new Rect(0.0f
+										, (text.font.ascent - ((text.font.lineHeight - text.font.fontSize) * 0.5f)) * text.fontSize / (float)text.font.fontSize - text.fontSize
+										, text.fontSize
+										, text.fontSize
+										);
+				var charGlyph = new Rect(info.minX * text.fontSize / (float)info.size
+										, info.minY * text.fontSize / (float)info.size
+										, (info.maxX - info.minX) * text.fontSize / (float)info.size
+										, (info.maxY - info.minY) * text.fontSize / (float)info.size
+										);
+				var upperRightPosition = vertices[indices[srcIndex + 1]].position;
+				var lowerLeftPosition = vertices[indices[srcIndex + 4]].position;
+				var charDraw = new Rect(lowerLeftPosition.x
+										, lowerLeftPosition.y
+										, upperRightPosition.x - lowerLeftPosition.x
+										, upperRightPosition.y - lowerLeftPosition.y
+										);
 
-		private class Vector2Approximately : EqualityComparer<Vector2> {
-			public override bool Equals(Vector2 x, Vector2 y) {
-				return Mathf.Approximately(x.x, y.x) && Mathf.Approximately(x.y, y.y);
-			}
-			public override int GetHashCode(Vector2 obj) {
-				return 0;
-			}
-		}
+				var scale = new Vector2(rectTransformRect.size.x / boundingBox.size.x
+										, rectTransformRect.size.y / boundingBox.size.y
+										);
 
-		private static T Lerp2D<T>(T[] rectangleValues, Vector2 f, System.Func<T, T, float, T> lerp) {
-			return lerp(lerp(rectangleValues[(int)RectangleIndex.LowerLeft], rectangleValues[(int)RectangleIndex.LowerRight], f.x)
-						, lerp(rectangleValues[(int)RectangleIndex.UpperLeft], rectangleValues[(int)RectangleIndex.UpperRight], f.x)
-						, f.y
-						);
-		}
-
-		private static UIVertex LerpUIVertex(UIVertex a, UIVertex b, float f) {
-			return new UIVertex(){
-				color = Color32.Lerp(a.color, b.color, f),
-				normal = Vector3.Lerp(a.normal, b.normal, f),
-				position = Vector3.Lerp(a.position, b.position, f),
-				tangent = Vector4.Lerp(a.tangent, b.tangent, f),
-				uv0 = Vector2.Lerp(a.uv0, b.uv0, f),
-				uv1 = Vector2.Lerp(a.uv1, b.uv1, f),
-			};
-		}
-
-		private static UIVertex UIVertexTriWeightedAverage(UIVertex a, float af, UIVertex b, float bf, UIVertex c, float cf) {
-			return new UIVertex(){
-				color = new Color32((byte)(a.color.r * af + b.color.r * bf + c.color.r * cf + 0.5f)
-									, (byte)(a.color.g * af + b.color.g * bf + c.color.g * cf + 0.5f)
-									, (byte)(a.color.b * af + b.color.b * bf + c.color.b * cf + 0.5f)
-									, (byte)(a.color.a * af + b.color.a * bf + c.color.a * cf + 0.5f)
-									),
-				normal = a.normal * af + b.normal * bf + c.normal * cf,
-				position = a.position * af + b.position * bf + c.position * cf,
-				tangent = a.tangent * af + b.tangent * bf + c.tangent * cf,
-				uv0 = a.uv0 * af + b.uv0 * bf + c.uv0 * cf,
-				uv1 = a.uv1 * af + b.uv1 * bf + c.uv1 * cf,
-			};
-		}
-
-		private static float GetAreaOfTriangle(Vector2 position0, Vector2 position1, Vector2 position2) {
-			var vector01 = position1 - position0;
-			var vector02 = position2 - position0;
-			return 0.5f * Mathf.Abs(Vector2Cross(vector01, vector02));
-		}
-
-		private static bool OverlapPosition(Vector2[] polygonPositions, Vector2 position) {
-			int polygonLength = polygonPositions.Length;
-			var baseDot = Vector2Cross(polygonPositions[0] - polygonPositions[polygonLength - 1], position - polygonPositions[polygonLength - 1]);
-			var result = true;
-			for (int i = 0, iMax = polygonLength - 1; i < iMax; ++i) {
-				var value = baseDot * Vector2Cross(polygonPositions[i + 1] - polygonPositions[i], position - polygonPositions[i]);
-				if (value <= 0.0f) {
-					result = false;
-					break;
+				var srcStartIndex = indices[srcIndex];
+				for (var k = 0; k < 4; ++k) {
+					var vertex = vertices[srcStartIndex + k];
+					var pos2d = Vector2.Scale((Vector2)vertex.position - charDraw.min + (charGlyph.min - boundingBox.min), scale) + rectTransformRect.min;
+					vertex.position = new Vector3(vertex.position.x, pos2d.y, vertex.position.z);
+					rectVertices.Add(vertex);
 				}
-			}
-			return result;
-		}
-
-		private static bool OverlapPosition(Vector2 upperLeftMaskPosition, Vector2 lowerRightMaskPosition, Vector2 position) {
-			bool result = true;
-			if (position.x < upperLeftMaskPosition.x) {
-				result = false;
-			} else if (lowerRightMaskPosition.x < position.x) {
-				result = false;
-			} else if (position.y < upperLeftMaskPosition.y) {
-				result = false;
-			} else if (lowerRightMaskPosition.y < position.y) {
-				result = false;
-			}
-			return result;
-		}
-
-		private static List<Vector2> GetCrossPositions(Vector2 position1, Vector2 position2, Vector2[] PolygonPositions) {
-			var result = new List<Vector2>();
-			for (int i = 0, iMax = PolygonPositions.Length; i < iMax; ++i) {
-				var cross = GetProgressOfCrossPosition(position1
-											, position2
-											, PolygonPositions[i]
-											, PolygonPositions[(i + 1) % iMax]
-											);
-				if (cross.HasValue) {
-					result.Add(Vector2.Lerp(position1, position2, cross.Value));
+				for (var k = 0; k < 6; ++k) {
+					rectIndices.Add(indices[srcIndex] - srcStartIndex);
+					++srcIndex;
 				}
+
+				VertexUtility.Intersect(rectVertices, rectIndices, mask, blend);
+				
+				var scaleInverse = new Vector2(boundingBox.size.x / rectTransformRect.size.x
+										, boundingBox.size.y / rectTransformRect.size.y
+										);
+
+				vertices.AddRange(rectVertices.Select(x=>{
+					var pos2d = Vector2.Scale((Vector2)x.position - rectTransformRect.min, scaleInverse) - (charGlyph.min - boundingBox.min) + charDraw.min;
+					x.position = new Vector3(x.position.x, pos2d.y, x.position.z);
+					return x;
+				}));
+				indices.AddRange(rectIndices.Select(x=>x+dstIndex));
+				dstIndex += rectVertices.Count;
+
+				rectVertices.RemoveRange(0, rectVertices.Count);
+				rectIndices.RemoveRange(0, rectIndices.Count);
 			}
-			return result;
+			vertices.RemoveRange(0, originalVerticesCount);
+			indices.RemoveRange(0, originalIndicesCount);
 		}
 
-		private static float? GetProgressOfCrossPosition(Vector2 positionA1, Vector2 positionA2, Vector2 positionB1, Vector2 positionB2) {
-			var vectorA = positionA2 - positionA1;
-			var vectorB = positionB2 - positionB1;
-			var crossAB = Vector2Cross(vectorA, vectorB);
-			if (crossAB == 0.0f) {
-				return null;
-			}
-			var inverseCrossAB = 1.0f / crossAB;
+		private void CharacterIntersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask, System.Func<UIVertex, UIVertex, UIVertex> blend, Text text) {
+			var originalVerticesCount = vertices.Count;
+			var originalIndicesCount = indices.Count;
+			var rectVertices = new List<UIVertex>(mask.Count * 2);
+			var rectIndices = new List<int>(mask.Count * 2);
 
-			var vectorX = positionB1 - positionA1;
-			var crossXA = Vector2Cross(vectorX, vectorA);
-			var crossXB = Vector2Cross(vectorX, vectorB);
-			var fA = crossXB * inverseCrossAB;
-			var fB = crossXA * inverseCrossAB;
-			if ((fA < 0.0f) || (1.0f < fA) || (fB < 0.0f) || (1.0f < fB)) {
-				return null;
+			var rectTransformRect = rectTransform.rect;
+
+			var srcIndex = 0;
+			var dstIndex = 0;
+			for (int i = 0, iMax = text.text.Length; i < iMax; ++i) {
+				var ch = text.text[i];
+				CharacterInfo info;
+				if (!text.font.GetCharacterInfo(ch, out info)) {
+					info = text.font.characterInfo.Where(x=>x.index == ch).FirstOrDefault();
+				}
+
+				var boundingBox = new Rect(0.0f
+										, (text.font.ascent - ((text.font.lineHeight - text.font.fontSize) * 0.5f)) * text.fontSize / (float)text.font.fontSize - text.fontSize
+										, text.fontSize
+										, text.fontSize
+										);
+				var charGlyph = new Rect(info.minX * text.fontSize / (float)info.size
+										, info.minY * text.fontSize / (float)info.size
+										, (info.maxX - info.minX) * text.fontSize / (float)info.size
+										, (info.maxY - info.minY) * text.fontSize / (float)info.size
+										);
+				var upperRightPosition = vertices[indices[srcIndex + 1]].position;
+				var lowerLeftPosition = vertices[indices[srcIndex + 4]].position;
+				var charDraw = new Rect(lowerLeftPosition.x
+										, lowerLeftPosition.y
+										, upperRightPosition.x - lowerLeftPosition.x
+										, upperRightPosition.y - lowerLeftPosition.y
+										);
+
+				var scale = new Vector2(rectTransformRect.size.x / boundingBox.size.x
+										, rectTransformRect.size.y / boundingBox.size.y
+										);
+
+				var srcStartIndex = indices[srcIndex];
+				for (var k = 0; k < 4; ++k) {
+					var vertex = vertices[srcStartIndex + k];
+					var pos2d = Vector2.Scale((Vector2)vertex.position - charDraw.min + (charGlyph.min - boundingBox.min), scale) + rectTransformRect.min;
+					vertex.position = new Vector3(pos2d.x, pos2d.y, vertex.position.z);
+					rectVertices.Add(vertex);
+				}
+				for (var k = 0; k < 6; ++k) {
+					rectIndices.Add(indices[srcIndex] - srcStartIndex);
+					++srcIndex;
+				}
+
+				VertexUtility.Intersect(rectVertices, rectIndices, mask, blend);
+				
+				var scaleInverse = new Vector2(boundingBox.size.x / rectTransformRect.size.x
+										, boundingBox.size.y / rectTransformRect.size.y
+										);
+
+				vertices.AddRange(rectVertices.Select(x=>{
+					var pos2d = Vector2.Scale((Vector2)x.position - rectTransformRect.min, scaleInverse) - (charGlyph.min - boundingBox.min) + charDraw.min;
+					x.position = new Vector3(pos2d.x, pos2d.y, x.position.z);
+					return x;
+				}));
+				indices.AddRange(rectIndices.Select(x=>x+dstIndex));
+				dstIndex += rectVertices.Count;
+
+				rectVertices.RemoveRange(0, rectVertices.Count);
+				rectIndices.RemoveRange(0, rectIndices.Count);
 			}
-			return fA;
+			vertices.RemoveRange(0, originalVerticesCount);
+			indices.RemoveRange(0, originalIndicesCount);
 		}
 	}
 }

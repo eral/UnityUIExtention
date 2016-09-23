@@ -90,7 +90,7 @@ namespace UIExtention {
 			Rect r = new Rect(Vector2.zero, textureSize);
 			previewRender.BeginStaticPreview(r);
 
-			var matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(previewRender.m_Camera.aspect, 1.0f, 1.0f));
+			var matrix = Matrix4x4.TRS(new Vector3(-1.0f, -1.0f, 0.0f), Quaternion.identity, new Vector3(previewRender.m_Camera.aspect * 2.0f, 2.0f, 1.0f));
 			var mesh = CreateMesh(material, drawSize, lightColor, darkColor);
 			previewRender.DrawMesh(mesh, matrix, previewMaterial, 0);
 
@@ -100,77 +100,14 @@ namespace UIExtention {
 		}
 
 		public static Mesh CreateMesh(GradationMaterial material) {
-			var result = new Mesh();
-
-			var grid = material.GetGrid();
-			var mainVertexCount = grid.xThresholds.Length * grid.yThresholds.Length;
-			var subVertexCount = mainVertexCount - grid.xThresholds.Length - grid.yThresholds.Length + 1;
-			var vertexCount = mainVertexCount + subVertexCount;
-		
-			var vertices = new Vector3[vertexCount];
-			for (int y = 0, yMax = grid.yThresholds.Length; y < yMax; ++y) {
-				for (int x = 0, xMax = grid.xThresholds.Length; x < xMax; ++x) {
-					var index = x + y * xMax;
-					vertices[index] = new Vector3(grid.xThresholds[x] * 2.0f - 1.0f
-												, grid.yThresholds[y] * 2.0f - 1.0f
-												, 0.0f
-												);
-				}
-			}
-			for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
-				for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
-					var index = x + y * xMax + mainVertexCount;
-					vertices[index] = new Vector3((grid.xThresholds[x] + grid.xThresholds[x + 1]) - 1.0f
-												, (grid.yThresholds[y] + grid.yThresholds[y + 1]) - 1.0f
-												, 0.0f
-												);
-				}
-			}
-			result.vertices = vertices;
-
-			var colors = new Color[vertexCount];
-			Array.Copy(grid.colors, colors, grid.colors.Length);
-			for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
-				for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
-					var index = x + y * xMax + mainVertexCount;
-					colors[index] = (grid.GetColor(x, y) + grid.GetColor(x + 1, y) + grid.GetColor(x + 1, y + 1) + grid.GetColor(x, y + 1)) * 0.25f;
-				}
-			}
-			result.colors = colors;
-
-			var indices = new int[12 * (grid.yThresholds.Length - 1) * (grid.xThresholds.Length - 1)];
-			for (int y = 0, yMax = grid.yThresholds.Length - 1; y < yMax; ++y) {
-				for (int x = 0, xMax = grid.xThresholds.Length - 1; x < xMax; ++x) {
-					var index = x + y * xMax;
-					var upperLeftIndex = x + y * grid.xThresholds.Length;
-					var upperRightIndex = upperLeftIndex + 1;
-					var lowerLeftIndex = upperLeftIndex + grid.xThresholds.Length;
-					var lowerRightIndex = lowerLeftIndex + 1;
-					var centerIndex = index + mainVertexCount;
-					indices[index * 12 +  0] = centerIndex;
-					indices[index * 12 +  1] = upperLeftIndex;
-					indices[index * 12 +  2] = upperRightIndex;
-					indices[index * 12 +  3] = centerIndex;
-					indices[index * 12 +  4] = upperRightIndex;
-					indices[index * 12 +  5] = lowerRightIndex;
-					indices[index * 12 +  6] = centerIndex;
-					indices[index * 12 +  7] = lowerRightIndex;
-					indices[index * 12 +  8] = lowerLeftIndex;
-					indices[index * 12 +  9] = centerIndex;
-					indices[index * 12 + 10] = lowerLeftIndex;
-					indices[index * 12 + 11] = upperLeftIndex;
-				}
-			}
-			result.SetIndices(indices, MeshTopology.Triangles, 0);
-
-			return result;
+			return material.GetMesh();
 		}
 
 		public static Mesh CreateMesh(GradationMaterial material, Vector2 drawSize, Color lightColor, Color darkColor) {
 			var result = CreateMesh(material);
 			if (material.keys.Any(x=>x.color.a < 1.0f)) {
-				var cellSize = new Vector2(32.0f / drawSize.x, 32.0f / drawSize.y);
-				var checkerMesh = CreateCheckerMesh(new Rect(-1.0f, -1.0f, 2.0f, 2.0f), cellSize, Color.white, Color.gray);
+				var cellSize = new Vector2(16.0f / drawSize.x, 16.0f / drawSize.y);
+				var checkerMesh = CreateCheckerMesh(new Rect(0.0f, 0.0f, 1.0f, 1.0f), cellSize, Color.white, Color.gray);
 
 				var vertices = new Vector3[result.vertices.Length + checkerMesh.vertices.Length];
 				Array.Copy(checkerMesh.vertices, 0, vertices, 0, checkerMesh.vertices.Length);
