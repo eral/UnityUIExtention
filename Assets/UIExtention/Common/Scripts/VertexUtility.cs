@@ -224,7 +224,7 @@ namespace UIExtention {
 				if (!IsDegeneracy(mask2d)) {
 					for (int i = 0, iMax = indicesOriginalCount; i < iMax; i += 3) {
 						for (int k = 0, kMax = 3; k < kMax; ++k) {
-							vertices2d[k] = pertexPack.vertices[i+k].position;
+							vertices2d[k] = pertexPack.vertices[pertexPack.indices[i+k]].position;
 						}
 						if (!IsDegeneracy(vertices2d)) {
 							pertexPack.start = i;
