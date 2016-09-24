@@ -78,7 +78,7 @@ namespace UIExtention {
 			return distance.sqrMagnitude;
 		}
 
-		private static UIVertex? GetCrossPointWithoutPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd) {
+		private static UIVertex? GetCrossPointWithoutPoint(UIVertex aStart, UIVertex aEnd, UIVertex bStart, UIVertex bEnd, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var nearestProgress = GetProgressOfNearestPoint(aStart.position, aEnd.position, bStart.position, bEnd.position);
 			if ((nearestProgress.a < float.Epsilon) || ((1.0f - nearestProgress.a) < float.Epsilon) || (nearestProgress.b < float.Epsilon) || ((1.0f - nearestProgress.b) < float.Epsilon)) {
 				return null;
@@ -86,7 +86,7 @@ namespace UIExtention {
 			var a = Lerp(aStart, aEnd, nearestProgress.a);
 			var b = Lerp(bStart, bEnd, nearestProgress.b);
 			if (Vector2.SqrMagnitude((Vector2)a.position - (Vector2)b.position) < Vector2.kEpsilon) {
-				return MultiplyVertexColor(a, b);
+				return blend(a, b);
 			} else {
 				return null;
 			}
@@ -197,13 +197,19 @@ namespace UIExtention {
 		};
 
 		public static void Intersect(List<UIVertex> vertices, List<UIVertex> mask) {
+			Intersect(vertices, mask, MultiplyVertexColor);
+		}
+		public static void Intersect(List<UIVertex> vertices, List<UIVertex> mask, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var indices = Enumerable.Range(0, vertices.Count).ToList();
-			Intersect(vertices, indices, mask);
+			Intersect(vertices, indices, mask, blend);
 			var verticesCount = vertices.Count;
 			vertices.AddRange(indices.Select(x=>vertices[x]));
 			vertices.RemoveRange(0, verticesCount);
 		}
 		public static void Intersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask) {
+			Intersect(vertices, indices, mask, MultiplyVertexColor);
+		}
+		public static void Intersect(List<UIVertex> vertices, List<int> indices, List<UIVertex> mask, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var indicesOriginalCount = indices.Count;
 
 			var pertexPack = new IndexedVerticesOffset(vertices, indices);
@@ -222,7 +228,7 @@ namespace UIExtention {
 						}
 						if (!IsDegeneracy(vertices2d)) {
 							pertexPack.start = i;
-							MaskTriangles(pertexPack, vertices2d, maskPack, mask2d);
+							MaskTriangles(pertexPack, vertices2d, maskPack, mask2d, blend);
 						}
 					}
 				}
@@ -267,14 +273,14 @@ namespace UIExtention {
 			}
 		}
 		
-		private static void MaskTriangles(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
+		private static void MaskTriangles(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var indicesBaseCount = vertexPack.indices.Count;
-			var addCount = AddContainsVertex(vertexPack, vertices2d, maskPack, mask2d);
+			var addCount = AddContainsVertex(vertexPack, vertices2d, maskPack, mask2d, blend);
 			if (addCount == 3) {
 				return;
 			}
-			addCount += AddContainsMask(vertexPack, vertices2d, maskPack, mask2d);
-			addCount += AddCrossPoint(vertexPack, vertices2d, maskPack, mask2d);
+			addCount += AddContainsMask(vertexPack, vertices2d, maskPack, mask2d, blend);
+			addCount += AddCrossPoint(vertexPack, vertices2d, maskPack, mask2d, blend);
 			if (3 < addCount) {
 				var center = Vector2.zero;
 				var positions = Enumerable.Range(indicesBaseCount, addCount)
@@ -297,34 +303,34 @@ namespace UIExtention {
 			vertexPack.indices.RemoveRange(indicesBaseCount, addCount);
 		}
 
-		private static int AddContainsVertex(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
+		private static int AddContainsVertex(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var result = 0;
 			for (int i = 0, iMax = 3; i < iMax; ++i) {
 				if (ContainsInConvexHull(mask2d, vertices2d[i])) {
 					vertexPack.indices.Add(vertexPack.vertices.Count);
 					var vertex = vertexPack.vertices[vertexPack.indices[vertexPack.start + i]];
 					var maskVertex = PickupUIVertexFromTriangle(vertex.position, maskPack, mask2d);
-					vertexPack.vertices.Add(MultiplyVertexColor(vertex, maskVertex));
+					vertexPack.vertices.Add(blend(vertex, maskVertex));
 					++result;
 				}
 			}
 			return result;
 		}
 
-		private static int AddContainsMask(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
+		private static int AddContainsMask(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var result = 0;
 			for (int i = 0, iMax = 3; i < iMax; ++i) {
 				if (ContainsInConvexHull(vertices2d, mask2d[i])) {
 					var vertex = PickupUIVertexFromTriangle(mask2d[i], vertexPack, vertices2d);
 					vertexPack.indices.Add(vertexPack.vertices.Count);
-					vertexPack.vertices.Add(MultiplyVertexColor(vertex, maskPack.vertices[maskPack.start + i]));
+					vertexPack.vertices.Add(blend(vertex, maskPack.vertices[maskPack.start + i]));
 					++result;
 				}
 			}
 			return result;
 		}
 
-		private static int AddCrossPoint(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d) {
+		private static int AddCrossPoint(IndexedVerticesOffset vertexPack, Vector2[] vertices2d, VerticesOffset maskPack, Vector2[] mask2d, System.Func<UIVertex, UIVertex, UIVertex> blend) {
 			var result = 0;
 			for (int i = 0, iMax = 3; i < iMax; ++i) {
 				var iNext = i + 1;
@@ -333,7 +339,12 @@ namespace UIExtention {
 					var kNext = k + 1;
 					if (kMax <= kNext) kNext = 0;
 
-					var crossPoint = GetCrossPointWithoutPoint(vertexPack.vertices[vertexPack.indices[vertexPack.start + i]], vertexPack.vertices[vertexPack.indices[vertexPack.start + iNext]], maskPack.vertices[maskPack.start + k], maskPack.vertices[maskPack.start + kNext]);
+					var crossPoint = GetCrossPointWithoutPoint(vertexPack.vertices[vertexPack.indices[vertexPack.start + i]]
+															, vertexPack.vertices[vertexPack.indices[vertexPack.start + iNext]]
+															, maskPack.vertices[maskPack.start + k]
+															, maskPack.vertices[maskPack.start + kNext]
+															, blend
+															);
 					if (crossPoint.HasValue) {
 						vertexPack.indices.Add(vertexPack.vertices.Count);
 						vertexPack.vertices.Add(crossPoint.Value);
