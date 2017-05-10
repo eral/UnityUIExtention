@@ -19,6 +19,7 @@ namespace UIExtention {
 			};
 		}
 		public static void Lerp(UIVertex a, UIVertex b, float f, out UIVertex result) {
+			result = new UIVertex();
 			result.color = Color32.Lerp(a.color, b.color, f);
 			result.normal = Vector3.Lerp(a.normal, b.normal, f);
 			result.position = Vector3.Lerp(a.position, b.position, f);
@@ -33,6 +34,7 @@ namespace UIExtention {
 			return result;
 		}
 		public static void WeightedAverage(IEnumerable<UIVertex> vertices, IEnumerable<float> weights, out UIVertex result) {
+			result = new UIVertex();
 			result.position = Vector3.zero;
 			result.normal = Vector3.zero;
 			var color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
