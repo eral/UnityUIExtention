@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 // (C) 2016 ERAL
 // Distributed under the Boost Software License, Version 1.0.
 // (See copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -82,7 +84,7 @@ Shader "UI/UIExtention/Perspective"
 			{
 				v2f OUT;
 				OUT.worldPosition = IN.vertex;
-				OUT.vertex = mul(UNITY_MATRIX_MVP, OUT.worldPosition);
+				OUT.vertex = UnityObjectToClipPos(OUT.worldPosition);
 
 				OUT.texcoord = half3(IN.texcoord * IN.texcoord1.x, IN.texcoord1.x);
 				
