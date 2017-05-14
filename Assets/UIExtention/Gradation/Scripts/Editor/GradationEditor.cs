@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(Gradation))]
+	[CanEditMultipleObjects]
 	public class GradationEditor : Editor {
 		private SerializedProperty m_Material;
 		private GUIContent m_MaterialContent;

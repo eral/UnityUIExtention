@@ -9,6 +9,7 @@ using Array = System.Array;
 
 namespace UIExtention {
 	[CustomEditor(typeof(GradationMaterial))]
+	[CanEditMultipleObjects]
 	public class GradationMaterialEditor : Editor {
 		private GUIContent m_EditorWindowContent;
 		private GUIContent m_PreviewTitleContent;
@@ -43,9 +44,12 @@ namespace UIExtention {
 
 			GUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
+			var oldGUIEnabled = GUI.enabled;
+			GUI.enabled = !serializedObject.isEditingMultipleObjects;
 			if (GUILayout.Button(m_EditorWindowContent, GUILayout.MaxWidth(105))) {
 				GradationWindow.Instantiate((GradationMaterial)target);
 			}
+			GUI.enabled = oldGUIEnabled;
 			GUILayout.EndHorizontal();
 
 			EditorGUILayout.PropertyField(m_Keys, m_KeysContent, true);
