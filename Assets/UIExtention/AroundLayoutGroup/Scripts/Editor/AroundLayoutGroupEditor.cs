@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(AroundLayoutGroup))]
+	[CanEditMultipleObjects]
 	public class AroundLayoutGroupEditor : Editor {
 		SerializedProperty m_Path;
 		SerializedProperty m_Range;
@@ -39,18 +40,13 @@ namespace UIExtention {
 			EditorGUILayout.PropertyField(m_Range, m_RangeContent);
 			EditorGUILayout.PropertyField(m_Justify, m_JustifyContent);
 			EditorGUILayout.PropertyField(m_Offset, m_OffsetContent);
-			{
-				var position = GUILayoutUtility.GetRect(m_ChildAlignmentContent, EditorStyles.label);
-
-				var labelPosition = position;
-				labelPosition.width = EditorGUIUtility.labelWidth;
-				EditorGUI.BeginProperty(position, m_ChildAlignmentContent, m_ChildAlignment);
-				EditorGUI.LabelField(position, m_ChildAlignmentContent);
-				EditorGUI.EndProperty();
-				position.xMin += labelPosition.width;
-
-				var valuePosition = position;
-				m_ChildAlignment.enumValueIndex = (int)(AroundLayoutGroup.ChildAnchor)EditorGUI.EnumPopup(valuePosition, (AroundLayoutGroup.ChildAnchor)m_ChildAlignment.enumValueIndex);
+			var position = GUILayoutUtility.GetRect(m_ChildAlignmentContent, EditorStyles.label);
+			using (new EditorGUI.PropertyScope(position, m_ChildAlignmentContent, m_ChildAlignment)) {
+				EditorGUI.BeginChangeCheck();
+				var enumValueIndex = (int)(AroundLayoutGroup.ChildAnchor)EditorGUI.EnumPopup(position, m_ChildAlignmentContent, (AroundLayoutGroup.ChildAnchor)m_ChildAlignment.enumValueIndex);
+				if (EditorGUI.EndChangeCheck()) {
+					m_ChildAlignment.enumValueIndex = enumValueIndex;
+				}
 			}
 
 			serializedObject.ApplyModifiedProperties();
