@@ -14,35 +14,35 @@ public class MinMaxSliderPropertyDrawer : PropertyDrawer {
 		var minMaxSliderAttribute = (MinMaxSliderAttribute)attribute;
 
 		if (SerializedPropertyType.Vector2 == property.propertyType) {
-			const float kSpacing = 5.0f;
+			using (new EditorGUI.PropertyScope(position, label, property)) {
+				const float kSpacing = 5.0f;
 
-			var value = property.vector2Value;
-			EditorGUI.BeginChangeCheck();
+				var value = property.vector2Value;
+				EditorGUI.BeginChangeCheck();
 
-			var prefixLabelPosition = position;
-			prefixLabelPosition.width = EditorGUIUtility.labelWidth;
-			EditorGUI.BeginProperty(position, label, property);
-			EditorGUI.LabelField(prefixLabelPosition, label);
-			EditorGUI.EndProperty();
-			position.xMin += prefixLabelPosition.width;
+				var prefixLabelPosition = position;
+				prefixLabelPosition.width = EditorGUIUtility.labelWidth;
+				EditorGUI.LabelField(prefixLabelPosition, label);
+				position.xMin += prefixLabelPosition.width;
 
-			var minFloatFieldPosition = position;
-			minFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
-			value.x = EditorGUI.FloatField(minFloatFieldPosition, value.x);
-			position.xMin += minFloatFieldPosition.width + kSpacing;
+				var minFloatFieldPosition = position;
+				minFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
+				value.x = EditorGUI.FloatField(minFloatFieldPosition, value.x);
+				position.xMin += minFloatFieldPosition.width + kSpacing;
 
-			var minMaxSliderPosition = position;
-			minMaxSliderPosition.width -= EditorGUIUtility.fieldWidth + kSpacing;
-			EditorGUI.MinMaxSlider(minMaxSliderPosition, ref value.x, ref value.y, minMaxSliderAttribute.min, minMaxSliderAttribute.max);
-			position.xMin += minMaxSliderPosition.width + kSpacing;
+				var minMaxSliderPosition = position;
+				minMaxSliderPosition.width -= EditorGUIUtility.fieldWidth + kSpacing;
+				EditorGUI.MinMaxSlider(minMaxSliderPosition, ref value.x, ref value.y, minMaxSliderAttribute.min, minMaxSliderAttribute.max);
+				position.xMin += minMaxSliderPosition.width + kSpacing;
 
-			var maxFloatFieldPosition = position;
-			maxFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
-			value.y = EditorGUI.FloatField(maxFloatFieldPosition, value.y);
-			position.xMin += maxFloatFieldPosition.width + kSpacing;
+				var maxFloatFieldPosition = position;
+				maxFloatFieldPosition.width = EditorGUIUtility.fieldWidth;
+				value.y = EditorGUI.FloatField(maxFloatFieldPosition, value.y);
+				position.xMin += maxFloatFieldPosition.width + kSpacing;
 
-			if (EditorGUI.EndChangeCheck()) {
-				property.vector2Value = value;
+				if (EditorGUI.EndChangeCheck()) {
+					property.vector2Value = value;
+				}
 			}
 		} else {
 			EditorGUI.LabelField(position, label, new GUIContent("Use MinMaxSlider with Vector2."));
