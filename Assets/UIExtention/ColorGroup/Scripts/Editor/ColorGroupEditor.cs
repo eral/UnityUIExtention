@@ -6,6 +6,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(ColorGroup))]
+	[CanEditMultipleObjects]
 	public class ColorGroupEditor : Editor {
 
 		public override void OnInspectorGUI() {
