@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(CornerColors))]
+	[CanEditMultipleObjects]
 	public class CornerColorsEditor : Editor {
 		SerializedProperty m_UpperLeftColor;
 		SerializedProperty m_UpperRightColor;
