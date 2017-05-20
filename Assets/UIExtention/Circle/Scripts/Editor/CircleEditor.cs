@@ -8,6 +8,7 @@ using UnityEditor.UI;
 
 namespace UIExtention {
 	[CustomEditor(typeof(Circle), true)]
+	[CanEditMultipleObjects]
 	public class CircleEditor : GraphicEditor {
 
 		SerializedProperty m_Sprite;
