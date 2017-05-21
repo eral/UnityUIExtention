@@ -13,15 +13,15 @@ namespace UIExtention {
 	public class TargetLayoutElement : MonoBehaviour, ILayoutElement {
 		public ILayoutElement Target {
 			get{
-				return null!=_target? (ILayoutElement)_target: null;
+				return null!=m_Target? (ILayoutElement)m_Target: null;
 			}
 			set{
-				_target = null!=value? (Component)value: null;
+				m_Target = null!=value? (Component)value: null;
 				updateRemoteBehaviour();
 				SetDirty();
 			}
 		}
-		[SerializeField] [RestrictInterface(typeof(ILayoutElement))] private Component _target;
+		[SerializeField] [RestrictInterface(typeof(ILayoutElement))] [UnityEngine.Serialization.FormerlySerializedAs("_target")] private Component m_Target;
 
 		private RectTransform rectTransform {get{return _rectTransform ?? GetComponent<RectTransform>();}}
 		[System.NonSerialized] private RectTransform _rectTransform = null;
@@ -49,7 +49,7 @@ namespace UIExtention {
 		}
 
 		public void OnDestroyOfRemoteBehaviour() {
-			_target = null;
+			m_Target = null;
 			_remoteBehaviour = null;
 		}
 
@@ -116,8 +116,8 @@ namespace UIExtention {
 				DestroyImmediate(_remoteBehaviour);
 				_remoteBehaviour = null;
 			}
-			if (_target) {
-				_remoteBehaviour = _target.gameObject.AddComponent<TargetLayoutElementRemoteBehaviour>();
+			if (m_Target) {
+				_remoteBehaviour = m_Target.gameObject.AddComponent<TargetLayoutElementRemoteBehaviour>();
 				_remoteBehaviour.Source = this;
 				//_remoteBehaviour.hideFlags |= HideFlags.HideInInspector;
 			}
