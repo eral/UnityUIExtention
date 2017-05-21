@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(TargetLayoutElementRemoteBehaviour))]
+	[CanEditMultipleObjects]
 	public class TargetLayoutElementRemoteBehaviourEditor : Editor {
 
 		public override void OnInspectorGUI() {

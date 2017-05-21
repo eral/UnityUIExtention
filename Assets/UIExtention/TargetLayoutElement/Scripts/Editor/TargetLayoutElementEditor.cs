@@ -9,29 +9,22 @@ using System.Linq;
 
 namespace UIExtention {
 	[CustomEditor(typeof(TargetLayoutElement))]
+	[CanEditMultipleObjects]
 	public class TargetLayoutElementEditor : Editor {
+		SerializedProperty m_Target;
+		GUIContent m_TargetContent;
+
+		protected virtual void OnEnable() {
+			m_TargetContent	= new GUIContent("Target");
+			m_Target		= serializedObject.FindProperty("m_Target");
+		}
 
 		public override void OnInspectorGUI() {
-			var targetLayoutElement = (TargetLayoutElement)target;
+			serializedObject.Update();
 
-			EditorGUI.BeginChangeCheck();
-			var value = EditorGUILayout.ObjectField("Target", (Object)targetLayoutElement.Target, typeof(Component), true);
-			if (EditorGUI.EndChangeCheck()) {
-				if (null == value) {
-					targetLayoutElement.Target = null;
-				} else if (typeof(ILayoutElement).IsAssignableFrom(value.GetType())) {
-					targetLayoutElement.Target = (ILayoutElement)value;
-				} else {
-					var components = ((Component)value).GetComponents<Component>().Where(x=>0 == (HideFlags.HideInInspector & x.hideFlags))
-																				.Where(x=>typeof(ILayoutElement).IsAssignableFrom(x.GetType()))
-																				.ToArray();
-					if (0 == components.Length) {
-						targetLayoutElement.Target = null;
-					} else {
-						targetLayoutElement.Target = (ILayoutElement)components[0];
-					}
-				}
-			}
+			EditorGUILayout.PropertyField(m_Target, m_TargetContent);
+
+			serializedObject.ApplyModifiedProperties();
 		}
 	}
 }
