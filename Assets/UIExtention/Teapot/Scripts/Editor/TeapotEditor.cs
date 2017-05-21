@@ -8,6 +8,7 @@ using UnityEditor.UI;
 
 namespace UIExtention {
 	[CustomEditor(typeof(Teapot), true)]
+	[CanEditMultipleObjects]
 	public class TeapotEditor : GraphicEditor {
 
 		SerializedProperty m_Sprite;
