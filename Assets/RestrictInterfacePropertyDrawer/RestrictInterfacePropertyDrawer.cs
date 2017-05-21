@@ -15,24 +15,26 @@ public class RestrictInterfacePropertyDrawer : PropertyDrawer {
 		var restrictInterfaceAttribute = (RestrictInterfaceAttribute)attribute;
 
 		if (SerializedPropertyType.ObjectReference == property.propertyType) {
-			var propertyHeight = base.GetPropertyHeight(property, label);
-			position.height = propertyHeight;
+			using (new EditorGUI.PropertyScope(position, label, property)) {
+				var propertyHeight = base.GetPropertyHeight(property, label);
+				position.height = propertyHeight;
 
-			EditorGUI.BeginChangeCheck();
-			var value = EditorGUI.ObjectField(position, label, property.objectReferenceValue, fieldInfo.FieldType, true);
-			if (EditorGUI.EndChangeCheck()) {
-				if (null == value) {
-					property.objectReferenceValue = value;
-				} else if (restrictInterfaceAttribute.RestrictType.IsAssignableFrom(value.GetType())) {
-					property.objectReferenceValue = value;
-				} else {
-					var components = ((Component)value).GetComponents<Component>().Where(x=>0 == (HideFlags.HideInInspector & x.hideFlags))
-																				.Where(x=>restrictInterfaceAttribute.RestrictType.IsAssignableFrom(x.GetType()))
-																				.ToArray();
-					if (0 == components.Length) {
-						property.objectReferenceValue = null;
+				EditorGUI.BeginChangeCheck();
+				var value = EditorGUI.ObjectField(position, label, property.objectReferenceValue, fieldInfo.FieldType, true);
+				if (EditorGUI.EndChangeCheck()) {
+					if (null == value) {
+						property.objectReferenceValue = value;
+					} else if (restrictInterfaceAttribute.RestrictType.IsAssignableFrom(value.GetType())) {
+						property.objectReferenceValue = value;
 					} else {
-						property.objectReferenceValue = components[0];
+						var components = ((Component)value).GetComponents<Component>().Where(x=>0 == (HideFlags.HideInInspector & x.hideFlags))
+																					.Where(x=>restrictInterfaceAttribute.RestrictType.IsAssignableFrom(x.GetType()))
+																					.ToArray();
+						if (0 == components.Length) {
+							property.objectReferenceValue = null;
+						} else {
+							property.objectReferenceValue = components[0];
+						}
 					}
 				}
 			}
