@@ -8,6 +8,7 @@ using UnityEditor.UI;
 
 namespace UIExtention {
 	[CustomEditor(typeof(Perspective), true)]
+	[CanEditMultipleObjects]
 	public class PerspectiveEditor : GraphicEditor {
 
 		SerializedProperty m_FieldOfView;
