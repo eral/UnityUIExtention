@@ -6,6 +6,7 @@ using UnityEditor;
 
 namespace UIExtention {
 	[CustomEditor(typeof(UICollider))]
+	[CanEditMultipleObjects]
 	public class UIColliderEditor : Editor {
 
 		public override void OnInspectorGUI() {
