@@ -60,21 +60,37 @@ namespace UIExtention {
 		}
 		public new ChildAnchor childAlignment {get{return (ChildAnchor)base.childAlignment;} set{if (base.childAlignment != (TextAnchor)value) {base.childAlignment = (TextAnchor)value; SetDirty();}}}
 
-
 		protected TextLikeLayoutGroup() {
 		}
 
 		public override void CalculateLayoutInputVertical() {
-			SetLayoutInputForAxis(-1.0f, -1.0f, -1.0f, 0);
-			SetLayoutInputForAxis(-1.0f, -1.0f, -1.0f, 1);
+			float minWidth;
+			float preferredWidth;
+			const float kFlexibleWidth = -1.0f;
+			float minHeight;
+			float preferredHeight;
+			const float kFlexibleHeight = -1.0f;
+			if (writingDirection == WritingDirection.Horizontal) {
+				minWidth = rectTransform.rect.width;
+				preferredWidth = rectTransform.rect.width;
+				minHeight = GetMinSize().y;
+				preferredHeight = GetPreferredHeightForHorizontalMode();
+			} else {
+				minWidth = GetMinSize().x;
+				preferredWidth = GetPreferredWidthForVerticalMode();
+				minHeight = rectTransform.rect.height;
+				preferredHeight = rectTransform.rect.height;
+			}
+			SetLayoutInputForAxis(minWidth, preferredWidth, kFlexibleWidth, 0);
+			SetLayoutInputForAxis(minHeight, preferredHeight, kFlexibleHeight, 1);
 		}
 
 		public override void SetLayoutHorizontal() {
-			setLayout();
+			SetLayout();
 		}
 
 		public override void SetLayoutVertical() {
-			setLayout();
+			SetLayout();
 		}
 
 #if UNITY_EDITOR
@@ -88,22 +104,171 @@ namespace UIExtention {
 		}
 #endif
 
-		private void setLayout() {
+		private Vector2 GetMinSize() {
+			var result = new Vector2(-1.0f, -1.0f);
+			foreach (var rectChild in rectChildren) {
+				var rectChildSize = rectChild.rect.size;
+				result.x = Mathf.Max(result.x, rectChildSize.x);
+				result.y = Mathf.Max(result.y, rectChildSize.y);
+			}
+			return result;
+		}
+
+		private float GetPreferredHeightForHorizontalMode() {
+			var rectTransformSize = rectTransform.rect.size;
+
+			Vector2 lineOffset = new Vector2();
+			if (horizontalDirection == HorizontalDirection.LR) {
+				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x += padding.left;
+			} else {
+				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x -= padding.right;
+			}
+			if (verticalDirection == VerticalDirection.TB) {
+				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y -= padding.top;
+			} else {
+				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y += padding.bottom;
+			}
+			var result = lineOffset.y;
+
+			var childIndex = 0;
+			var rectChildrenCount = rectChildren.Count;
+			while (childIndex < rectChildrenCount) {
+				//ライン矩形算出
+				var lineRect = new Rect(0.0f, 0.0f, padding.horizontal, 0.0f);
+				var childIndexLineMax = childIndex;
+				while (childIndexLineMax < rectChildrenCount) {
+					var child = rectChildren[childIndexLineMax];
+					var childRect = child.rect;
+					if (0.0f < lineRect.height) {
+						//既にライン矩形に1つ以上入っている(垂直サイズが0以上なら既に入ってる)なら
+						if ((rectTransformSize.x < (lineRect.width + childRect.width))) {
+							//現在の子を含めると食み出すなら
+							//次の行へ
+							break;
+						} else {
+							//要素巻スペース空ける
+							lineRect.width += elementSpacing;
+						}
+					}
+					lineRect.width += childRect.width;
+					if (childAlignment == ChildAnchor.Pivot) {
+						lineRect.yMin = Mathf.Min(lineRect.yMin, childRect.yMin);
+						lineRect.yMax = Mathf.Max(lineRect.yMax, childRect.yMax);
+					} else {
+						lineRect.height = Mathf.Max(lineRect.height, childRect.height);
+					}
+					childIndexLineMax++;
+				}
+				childIndex = childIndexLineMax;
+				if (verticalDirection == VerticalDirection.TB) {
+					lineOffset.y -= lineRect.height;
+					lineOffset.y -= LineSpacing;
+				} else {
+					lineOffset.y += lineRect.height;
+					lineOffset.y += LineSpacing;
+				}
+			}
+
+			if (verticalDirection == VerticalDirection.TB) {
+				lineOffset.y += LineSpacing;
+			} else {
+				lineOffset.y -= LineSpacing;
+			}
+			result = Mathf.Abs(result - lineOffset.y);
+			result += padding.top;
+			result += padding.bottom;
+			return result;
+		}
+
+		private float GetPreferredWidthForVerticalMode() {
+			var rectTransformSize = rectTransform.rect.size;
+
+			Vector2 lineOffset = new Vector2();
+			if (horizontalDirection == HorizontalDirection.LR) {
+				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x += padding.left;
+			} else {
+				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x -= padding.right;
+			}
+			if (verticalDirection == VerticalDirection.TB) {
+				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y -= padding.top;
+			} else {
+				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y += padding.bottom;
+			}
+			var result = lineOffset.x;
+
+			var childIndex = 0;
+			var rectChildrenCount = rectChildren.Count;
+			while (childIndex < rectChildrenCount) {
+				//ライン矩形算出
+				var lineRect = new Rect(0.0f, 0.0f, 0.0f, padding.vertical);
+				var childIndexLineMax = childIndex;
+				while (childIndexLineMax < rectChildrenCount) {
+					var child = rectChildren[childIndexLineMax];
+					var childRect = child.rect;
+					if (0.0f < lineRect.width) {
+						//既にライン矩形に1つ以上入っている(垂直サイズが0以上なら既に入ってる)なら
+						if ((rectTransformSize.y < (lineRect.height + childRect.height))) {
+							//現在の子を含めると食み出すなら
+							//次の行へ
+							break;
+						} else {
+							//要素巻スペース空ける
+							lineRect.height += elementSpacing;
+						}
+					}
+					if (childAlignment == ChildAnchor.Pivot) {
+						lineRect.xMin = Mathf.Min(lineRect.xMin, childRect.xMin);
+						lineRect.xMax = Mathf.Max(lineRect.xMax, childRect.xMax);
+					} else {
+						lineRect.width = Mathf.Max(lineRect.width, childRect.width);
+					}
+					lineRect.height += childRect.height;
+					childIndexLineMax++;
+				}
+				childIndex = childIndexLineMax;
+				if (horizontalDirection != HorizontalDirection.LR) {
+					lineOffset.x -= lineRect.width;
+					lineOffset.x -= LineSpacing;
+				} else {
+					lineOffset.x += lineRect.width;
+					lineOffset.x += LineSpacing;
+				}
+			}
+
+			if (horizontalDirection != HorizontalDirection.LR) {
+				lineOffset.x += LineSpacing;
+			} else {
+				lineOffset.x -= LineSpacing;
+			}
+			result = Mathf.Abs(result - lineOffset.x);
+			result += padding.left;
+			result += padding.right;
+			return result;
+		}
+
+		private void SetLayout() {
 			var rectChildrenCount = rectChildren.Count;
 			if (0 < rectChildrenCount) {
 				switch (writingDirection) {
 				case WritingDirection.Horizontal:
-					setLayoutForHorizontalMode();
+					SetLayoutForHorizontalMode();
 					break;
 				case WritingDirection.Vertical:
-					setLayoutForVerticalMode();
+					SetLayoutForVerticalMode();
 					break;
 				}
 			}
 		}
 
-		private void setLayoutForHorizontalMode() {
-			var rectTransform = GetComponent<RectTransform>();
+		private void SetLayoutForHorizontalMode() {
 			var rectTransformSize = rectTransform.rect.size;
 
 			Vector2 lineOffset = new Vector2();
@@ -196,8 +361,7 @@ namespace UIExtention {
 			}
 		}
 
-		private void setLayoutForVerticalMode() {
-			var rectTransform = GetComponent<RectTransform>();
+		private void SetLayoutForVerticalMode() {
 			var rectTransformSize = rectTransform.rect.size;
 
 			Vector2 lineOffset = new Vector2();
