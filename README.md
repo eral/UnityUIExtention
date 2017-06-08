@@ -44,6 +44,10 @@ UnityUI(uGUI)向けの拡張コンポーネント群
 <img alt="Teapot" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/Teapot.png" width="426">  
 (CanvasRendererは深度テストが無効なので綺麗には描画出来無い)
 
+### TextLikeLayoutGroup
+文章の様に1行に配置、はみ出たら次の行へ配置  
+<img alt="TextLikeLayoutGroup" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/TextLikeLayoutGroup.gif" width="426">
+
 ### UICollider
 表示物の無い当たり判定  
 <img alt="UICollider" src="https://raw.githubusercontent.com/eral/UnityUIExtention/master/Assets/UIExtention/Common/Documents/UICollider.gif" width="426">
