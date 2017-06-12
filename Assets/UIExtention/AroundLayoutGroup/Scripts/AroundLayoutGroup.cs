@@ -50,6 +50,13 @@ namespace UIExtention {
 			setLayout();
 		}
 
+#if UNITY_EDITOR
+		protected override void Reset() {
+			base.Reset();
+			childAlignment = ChildAnchor.Nomodify;
+		}
+#endif
+
 		private void setLayout() {
 			switch (m_Path) {
 			case Path.RectangleCLV:
