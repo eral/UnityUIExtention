@@ -119,17 +119,17 @@ namespace UIExtention {
 
 			Vector2 lineOffset = new Vector2();
 			if (horizontalDirection == HorizontalDirection.LR) {
-				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x -= rectTransformSize.x * rectTransform.pivot.x;
 				lineOffset.x += padding.left;
 			} else {
-				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x += rectTransformSize.x * (1.0f - rectTransform.pivot.x);
 				lineOffset.x -= padding.right;
 			}
 			if (verticalDirection == VerticalDirection.TB) {
-				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y += rectTransformSize.y * (1.0f - rectTransform.pivot.y);
 				lineOffset.y -= padding.top;
 			} else {
-				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y -= rectTransformSize.y * rectTransform.pivot.y;
 				lineOffset.y += padding.bottom;
 			}
 			var result = lineOffset.y;
@@ -189,17 +189,17 @@ namespace UIExtention {
 
 			Vector2 lineOffset = new Vector2();
 			if (horizontalDirection == HorizontalDirection.LR) {
-				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x -= rectTransformSize.x * rectTransform.pivot.x;
 				lineOffset.x += padding.left;
 			} else {
-				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x += rectTransformSize.x * (1.0f - rectTransform.pivot.x);
 				lineOffset.x -= padding.right;
 			}
 			if (verticalDirection == VerticalDirection.TB) {
-				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y += rectTransformSize.y * (1.0f - rectTransform.pivot.y);
 				lineOffset.y -= padding.top;
 			} else {
-				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y -= rectTransformSize.y * rectTransform.pivot.y;
 				lineOffset.y += padding.bottom;
 			}
 			var result = lineOffset.x;
@@ -273,17 +273,17 @@ namespace UIExtention {
 
 			Vector2 lineOffset = new Vector2();
 			if (horizontalDirection == HorizontalDirection.LR) {
-				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x -= rectTransformSize.x * rectTransform.pivot.x;
 				lineOffset.x += padding.left;
 			} else {
-				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x += rectTransformSize.x * (1.0f - rectTransform.pivot.x);
 				lineOffset.x -= padding.right;
 			}
 			if (verticalDirection == VerticalDirection.TB) {
-				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y += rectTransformSize.y * (1.0f - rectTransform.pivot.y);
 				lineOffset.y -= padding.top;
 			} else {
-				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y -= rectTransformSize.y * rectTransform.pivot.y;
 				lineOffset.y += padding.bottom;
 			}
 
@@ -341,7 +341,7 @@ namespace UIExtention {
 					case ChildAnchor.RightBottom: childOffsetMin.y -= (lineRect.height - child.rect.height); goto case ChildAnchor.LeftTop;
 					default: break;
 					}
-					child.anchoredPosition = childOffsetMin;
+					child.localPosition = childOffsetMin;
 
 					if (horizontalDirection == HorizontalDirection.LR) {
 						elementOffset.x += child.rect.width;
@@ -366,17 +366,17 @@ namespace UIExtention {
 
 			Vector2 lineOffset = new Vector2();
 			if (horizontalDirection == HorizontalDirection.LR) {
-				lineOffset.x -= rectTransformSize.x * 0.5f;
+				lineOffset.x -= rectTransformSize.x * rectTransform.pivot.x;
 				lineOffset.x += padding.left;
 			} else {
-				lineOffset.x += rectTransformSize.x * 0.5f;
+				lineOffset.x += rectTransformSize.x * (1.0f - rectTransform.pivot.x);
 				lineOffset.x -= padding.right;
 			}
 			if (verticalDirection == VerticalDirection.TB) {
-				lineOffset.y += rectTransformSize.y * 0.5f;
+				lineOffset.y += rectTransformSize.y * (1.0f - rectTransform.pivot.y);
 				lineOffset.y -= padding.top;
 			} else {
-				lineOffset.y -= rectTransformSize.y * 0.5f;
+				lineOffset.y -= rectTransformSize.y * rectTransform.pivot.y;
 				lineOffset.y += padding.bottom;
 			}
 
@@ -434,7 +434,7 @@ namespace UIExtention {
 					case ChildAnchor.RightBottom: childOffsetMin.x -= (1.0f - child.pivot.x) * child.rect.width; break;
 					default: break;
 					}
-					child.anchoredPosition = childOffsetMin;
+					child.localPosition = childOffsetMin;
 
 					if (verticalDirection == VerticalDirection.TB) {
 						elementOffset.y -= child.rect.height;
