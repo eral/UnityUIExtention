@@ -128,7 +128,6 @@ namespace UIExtention {
 		}
 
 		private void layoutBase(System.Func<float, Vector2, Vector2> layout) {
-			var rectTransform = GetComponent<RectTransform>();
 			var sizeHalf = new Vector2(rectTransform.rect.width * 0.5f, rectTransform.rect.height * 0.5f);
 			var scribeSizeHalf = 0.0f;
 			if (childAlignment == ChildAnchor.Inscribe) {
