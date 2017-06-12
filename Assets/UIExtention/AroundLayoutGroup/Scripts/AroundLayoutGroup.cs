@@ -142,6 +142,7 @@ namespace UIExtention {
 			} else if (childAlignment == ChildAnchor.Circumscribe) {
 				scribeSizeHalf = -0.5f;
 			}
+			var centerOffset = new Vector2((rectTransform.pivot.x - 0.5f) * sizeHalf.x, (0.5f - rectTransform.pivot.y) * sizeHalf.y);
 
 			var rectChildrenCount = rectChildren.Count;
 			if (0 < rectChildrenCount) {
@@ -151,7 +152,8 @@ namespace UIExtention {
 
 					var childRectTransform = child.GetComponent<RectTransform>();
 					var progress = (float)i * countToProgress + (offset + range.x);
-					childRectTransform.anchoredPosition = layout(progress, sizeHalf);
+					var childPivotPosition = layout(progress, sizeHalf);
+					childRectTransform.localPosition = childPivotPosition + centerOffset;
 
 					if (childAlignment == ChildAnchor.Nomodify) {
 						m_Tracker.Add(this, child, DrivenTransformProperties.AnchoredPosition);
